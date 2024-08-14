@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ôn tập DOM</title>
+</head>
+<body>
+    <h1>Bài tập 1: Thay đổi nội dung của một phần tử</h1>
+
+    <p id="title">abcd</p>
+    <script>
+        document.getElementById("title").innerHTML = "Hello, DOM!";
+    </script>
+
+    <h1 >Bài tập 2: Thay đổi màu sắc của phần tử</h1>
+
+    <p id="text">abcd</p>
+    <script>
+        document.getElementById("text").style.color = "red";
+    </script>
+
+    <h1 >Bài tập 3: Thêm phần tử mới vào DOM</h1>
+
+    <ul id="list">
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+    <script>
+        var newItem = document.createElement("li");
+        newItem.innerHTML = "Item 4";
+        document.getElementById("list").appendChild(newItem);
+    </script>
+
+    <h1 >Bài tập 4: Xóa phần tử khỏi DOM</h1>
+
+    <p id="remove-me">abcd</p>
+    <script>
+        var element = document.getElementById("remove-me");
+        element.parentNode.removeChild(element);
+    </script>
+
+    <h1 >Bài tập 5: Thay đổi thuộc tính của phần tử<h1>
+
+    <img id="image" src="Day_2024.8.14_OnTapDom\abc.png">
+    <script>
+        document.getElementById("image").src = "abcd.png";
+    </script>
+
+    <h1 >Bài tập 6: Xử lý sự kiện click<h1>
+
+    <button id="btn">abcd</button>
+    <script>
+        document.getElementById("btn").addEventListener("click", function() {
+            alert("abcd");
+        });
+    </script>
+
+    <h1 >Bài tập 7: Thay đổi nội dung của nhiều phần tử<h1>
+
+    <h5>Paragraph 1</h5>
+    <h5>Paragraph 2</h5>
+    <h5>Paragraph 3</h5>
+
+    <script>
+        var paragraphs = document.getElementsByTagName("h5");
+        for (var i = 0; i < paragraphs.length; i++) {
+            paragraphs[i].innerHTML = "Updated paragraph";
+        }
+    </script>
+
+    <h1 >Bài tập 8: Tạo một bảng động<h1>
+
+    <div id="table-container"></div>
+    <script>
+        var table = document.createElement("table");
+        table.border = "1";
+        for (var i = 0; i < 3; i++) {
+            var row = document.createElement("tr");
+
+            for (var j = 0; j < 3; j++) {
+                var cell = document.createElement("td");
+                cell.innerHTML = "cột " + (i + 1) + ", hàng " + (j + 1);
+                row.appendChild(cell);
+            }
+            table.appendChild(row);
+        }
+        document.getElementById("table-container").appendChild(table);
+    </script>
+
+    <h1 >Bài tập 9: Đếm số lượng phần tử trong DOM<h1>
+
+    <p id="result"></p>
+    <script>
+        var divs = document.getElementsByTagName("div");
+        var count = divs.length;
+        document.getElementById("result").innerHTML = "Có " + count + " phần tử div trên trang.";
+    </script>
+
+    <h1 >Bài tập 10: Thay đổi nội dung bằng cách thao tác với Class<h1>
+    
+    <div class="item">Item 1</div>
+    <div class="item">Item 2</div>
+    <div class="item">Item 3</div>
+
+    <script>
+        var items = document.getElementsByClassName("item");
+        for (var i = 0; i < items.length; i++) {
+            items[i].innerHTML = "Updated item";
+        }
+    </script>
+
+</body>
+</html>
