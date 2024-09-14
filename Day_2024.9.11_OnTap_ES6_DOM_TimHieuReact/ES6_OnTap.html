@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>ES6</title>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <!-- ES6 khai báo giá trị với var Khai báo toàn cục -->
+    <script type="text/babel">
+        var x = 10;
+        function myFnc(){
+        console.log(x); /* output: 10, x có ảnh hưởng tới Function */
+        }
+        console.log(x); /* output: 10, x có ảnh hưởng khắp nơi */
+        myFnc();
+    </script>
+
+    <!-- Khai báo địa phương Biến được khai báo chỉ ảnh hưởng trong function được khai báo. -->
+     <script>
+        var x = 10;
+        function myFnc(){
+        var y = x + 5 /* y được khai báo trong Function */
+        console.log(y); /* output: 15, y chỉ có ảnh hưởng bên trong Function */
+        }
+        console.log(y); /* output: Error */
+        myFnc();
+     </script>
+
+    <!-- ES6 khai báo giá trị với let Để hiểu rõ, trước tiên ta xét var bên trong câu điều kiện if. -->
+    <script>
+        var x = 10;
+        if (x === 10) {
+        var x = 20; /* x được gán giá trị mới là 20 */
+        console.log(x); /* output: 20 */
+        }
+        console.log(x);  /* output: 20 */
+    </script>
+
+    <!-- let với khối (block) -->
+    <script>
+        let x = 10;
+        if (x === 10) {
+        let x = 20; /* x được let với giá trị mới là 20 */
+        console.log(x); /* output: 20, giá trị mới chỉ có tác dụng trong if */
+        }
+        console.log(x);  /* output: 10, x bên ngoài if, nên không bị ảnh hưởng giá trị mới */
+    </script>
+
+    <!-- ES6 khai báo giá trị với const -->
+    <script>
+        const x = 10;
+        console.log(x);  /* output: 10 */
+        if (x === 10) {
+        x = 20;
+        console.log(x); /* output: Error */
+        }
+    </script>
+
+    <!-- ES6 - khai báo tham số mặc định
+    Có 2 cách khai báo tham số mặc định: gán mặc định tại vị trí khai báo và gán bên trong function. -->
+    <script>
+        function multiply(a, b = 1) {
+        return a * b;
+        }
+
+        console.log(multiply(5, 2)); /* ouput: 10 */
+
+        console.log(multiply(5)); /* ouput: 5 */
+    </script>
+
+    <!-- Gán bên trong function -->
+    <script>
+        function member(name) {
+        name = name || "Guess";
+        return name;
+        }
+        console.log(member()); /* ouput: Guess */
+        console.log(member("Dương Minh Trí")); /* ouput: "Dương Minh Trí" */
+    </script> 
+
+    <!-- Spread syntax với Array -->
+     <script>
+        const oldArray = [1, 2, 3];
+        const newArray = [...oldArray, 4, 5];
+        console.log(newArray); /* ouput: [1, 2, 3, 4, 5] */
+
+        const oldArray1 = [1, 2, 3];
+        const newArray1 = [oldArray, 4, 5];
+        console.log(newArray1); /* ouput: (3) [Array(3), 4, 5] */
+     </script>
+
+    <!-- Spread syntax với Object -->
+     <script>
+        const oldObject = {
+            name: 'Dương Minh Trí'
+        };
+
+        const newObject = {
+        oldObject,
+        age: 4
+        };
+
+        console.log(newObject); /* ouput: {oldObject: {…}, age: 4} */
+
+        const oldObject1 = {
+            name: 'Dương Minh Trí'
+        };
+
+        const newObject1 = {
+        ...oldObject,
+        age: 4
+        };
+
+        console.log(newObject1); /* ouput: {name: "Dương Minh Trí", age: 4} */
+     </script>
+
+    <!-- Rest parameters
+    Tham số "còn lại" (rest parameters), là tham số đại diện cho những tham số không được khai báo.
+    Khi sử dụng khai báo đại diện bên trong một function thì khi gọi function sẽ không giới hạn giá trị truyền vào.
+    Đại diện này được ký hiệu bằng khai báo ...name (cẩn thận coi chừng nhầm lẫn với spread syntax). -->
+     <script>
+        function number(num1, num2, ...numOther){
+            console.log("x:", num1); 
+            console.log("y:", num2);
+            console.log("Other number:", numOther);
+        }
+        number("one", "two", "three", "four", "five", "six");
+        /* ouput: 
+        x: one
+        y: two
+        Other number: (4) ["three", "four", "five", "six"] */
+
+        function number(...numOther){
+            console.log(number.length);
+        }
+        number() /* ouput: 0 */
+        number(7) /* ouput: 1 */
+        number(2, 4, 7) /* ouput: 3 */
+     </script>
+
+    <!-- ES6 Destructuring (phá vỡ cấu trúc).
+    Destructuring (phá vỡ cấu trúc) cho phép chúng ta dễ dàng sử dụng các giá trị phần tử của Array hoặc Object.
+    Destructuring rất hữu dụng khi làm việc với function có đối số.
+    Xem các ví dụ bên dưới để rõ hơn về destructuring nhé. -->
+    <script>
+        const array = [1, 2, 3];
+        const [a, b] = array;
+        console.log(a); /* output: 1 */
+        console.log(b); /* output: 2 */
+        console.log(array); /* output: [1, 2, 3] */
+
+        const myObject = {
+            name2: "Dương Minh Trí"
+        }
+        const {name, age} = myObject;
+        console.log(name); /* output: "Dương Minh Trí" */
+        console.log(age); /* output: 4 */
+        console.log(myObject); /* output: {name: "Dương Minh Trí", age: 4} */
+    </script>
+
+    <!-- ES6 arrow function
+    ES6 arrow function, viết function dưới dạng mũi tên =>.
+    Cách viết này linh hoạt, tùy biến function hơn so với cách viết cũ. -->
+    <script>
+        var member = (name, age) => {
+            console.log(name, age);
+        }
+        member("Dương Minh Trí", 4); /* output: "Dương Minh Trí" 4 */
+
+        var member = name => {
+            console.log(name);
+        }
+        member("Dương Minh Trí"); /* output: "Dương Minh Trí" */
+
+        var member = () => {
+            console.log("Dương Minh Trí");
+        }
+        member(); /* output: "Dương Minh Trí" */
+    </script>
+
+    <!-- ES6 Classes
+    Classes là một dạng function đặc biệt, thay vì sử dụng từ function thì chúng ta sử dụng class và thuộc tính được gán bên trong phương thức constructor().
+    Classes có tính kế thừa (inheritance), dễ dàng kế thừa tất cả phương thức từ Classes đã có trước đó. -->
+
+    <script>
+        class Member {
+        constructor() {
+            this.name = "Dương Minh Trí";
+        }
+        }
+        var x = new Member();
+        console.log(x.name); /* ouput: "Dương Minh Trí" */
+
+        // Classes - sử dụng với method
+        class Member {
+        constructor() {
+            this.name = "Dương Minh Trí";
+        }
+
+        memberName() {
+            return this.name;
+        }
+        }
+        var x = new Member();
+        console.log(x.memberName()); /* ouput: "Dương Minh Trí" */
+
+        // Classes - tính kế thừa (inheritance)
+        class Member {
+        constructor() {
+            this.name = "Dương Minh Trí";
+        }
+
+        memberName() {
+            return this.name;
+        }
+        }
+
+        class User extends Member {
+        constructor(name, age) {
+            super(name);
+            this.age = 4;
+        }
+
+        memberInfo() {
+            return this.memberName() + 'Tuổi:' + this.age;
+        }
+        }
+        var x = new User();
+        console.log(x.memberInfo()); /* ouput: "Dương Minh Trí" Tuổi:4 */
+    </script>
+
+    <!-- Javascript - export & import
+    Để dễ làm việc, quản lý các chức năng file javascript, chúng ta thường tách các phần riêng biệt ra riêng từng file khác nhau, khi đó nhu cầu lồng ghép các function của file này vào file kia để sử dụng các function đã có là khó tránh khỏi, khi này ta sẽ sử dụng:
+    Câu lệnh export để các file chấp nhận việc xuất các function
+    Câu lệnh import để file liên kết với các function của file được export.
+    Javascript - export & import có 2 dạng là theo mặc định (default), và theo tên (name), ta xét từng dạng để hiểu rõ hơn về export này nhé. -->
+    
+  </body>
+</html>
