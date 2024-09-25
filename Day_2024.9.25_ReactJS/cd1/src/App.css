@@ -1,0 +1,84 @@
+.app {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+h1 {
+  font-size: 2em;
+  display: flex;
+  align-items: center;
+}
+
+h1 span {
+  margin-left: 10px;
+}
+
+.task-list {
+  margin-top: 20px;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.task input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.task-text {
+  font-size: 1.2em;
+  margin-right: 20px;
+}
+
+.task-date {
+  font-size: 0.9em;
+  color: gray;
+}
+
+.add-task {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.add-task input[type="text"],
+.add-task input[type="date"],
+.add-task select {
+  padding: 8px;
+  margin-right: 10px;
+  font-size: 1em;
+}
+
+.add-button {
+  background-color: transparent;
+  border: none;
+  font-size: 2em;
+  cursor: pointer;
+  color: #4caf50;
+}
+
+.add-button:hover {
+  color: #388e3c;
+}
+
+.blue {
+  color: blue;
+}
+
+.red {
+  color: red;
+}
+
+.orange {
+  color: orange;
+}
+
+.green {
+  color: green;
+}
+
+.default {
+  color: black;
+}
