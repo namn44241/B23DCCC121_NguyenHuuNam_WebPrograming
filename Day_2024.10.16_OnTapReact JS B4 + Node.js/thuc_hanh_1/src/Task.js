@@ -18,18 +18,12 @@ function getColorByDueDate(dueDate) {
       const dueDate = new Date(today);
       dueDate.setDate(today.getDate() + ((dayIndex + 7 - today.getDay()) % 7));
       diffDays = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
-    } else {
-      // Nếu không phải là ngày trong tuần, giả sử là một ngày cụ thể
-      const [day, month, year] = dueDate.split('/');
-      const due = new Date(year, month - 1, day);
-      diffDays = Math.floor((due - today) / (1000 * 60 * 60 * 24));
-    }
+    } else {}
   }
 
   if (diffDays <= 2) return 'red';
   if (diffDays >= 3 && diffDays <= 5) return 'orange';
-  if (diffDays >= 6 && diffDays <= 7) return 'purple';
-  return 'green';
+  if (diffDays >= 6 && diffDays <= 7) return 'green';
 }
 
 function Task({ task, onToggleComplete }) {

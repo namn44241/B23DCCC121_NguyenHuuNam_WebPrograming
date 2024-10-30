@@ -44,7 +44,7 @@ function App() {
       setNewTask('');
       setNewDate('');
     } else {
-      alert("Điền cả trường Task cả trường ");
+      alert("Điền đầy đủ thông tin nhiệm vụ và ngày đi má!");
     }
   };
 

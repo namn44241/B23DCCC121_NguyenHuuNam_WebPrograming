@@ -42,7 +42,7 @@ h1 span {
 
 .task-date.red { color: red; }
 .task-date.orange { color: orange; }
-.task-date.purple { color: purple; }
+/* .task-date.purple { color: purple; } */
 .task-date.green { color: green; }
 
 .custom-checkbox {
@@ -64,7 +64,7 @@ h1 span {
 
 .custom-checkbox.red { border-color: red; }
 .custom-checkbox.orange { border-color: orange; }
-.custom-checkbox.purple { border-color: purple; }
+/* .custom-checkbox.purple { border-color: purple; } */
 .custom-checkbox.green { border-color: green; }
 
 .completed {
