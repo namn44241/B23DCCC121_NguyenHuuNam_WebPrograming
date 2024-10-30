@@ -10,10 +10,3 @@ const db = mysql.createPool({
 
 module.exports = db;
 
-// db.connect((err) => {
-//     if (err) {
-//         console.error('Database connection thaats bai:', err.stack);
-//         return;
-//     }
-//     console.log('Connected den mysql');
-// });
