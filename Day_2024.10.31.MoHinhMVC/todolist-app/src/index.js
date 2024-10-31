@@ -1,8 +1,5 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-// Debug để xem đường dẫn hiện tại
-console.log('Current directory:', __dirname);
-
 const todoRoutes = require('./routes/todoRoutes');
 
 const app = express();
