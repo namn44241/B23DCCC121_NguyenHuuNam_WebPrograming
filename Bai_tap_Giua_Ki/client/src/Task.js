@@ -4,7 +4,17 @@ function getColorByDueDate(dueDate) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Nếu dueDate là Today hoặc Tomorrow
+  // Nếu dueDate là ngày cụ thể (DD/MM), kiểm tra xem có phải ngày trong quá khứ
+  if (dueDate.match(/^\d{2}\/\d{2}$/)) {
+    const [day, month] = dueDate.split('/');
+    const date = new Date(today.getFullYear(), month - 1, day);
+    if (date < today) {
+      return 'red';  // Ngày trong quá khứ -> đỏ
+    }
+  }
+  
+  // Các trường hợp đặc biệt
+  if (dueDate === 'Yesterday') return 'red';
   if (dueDate === 'Today') return 'red';
   if (dueDate === 'Tomorrow') return 'red';
   
@@ -22,7 +32,16 @@ function getColorByDueDate(dueDate) {
     return 'green';
   }
   
-  // Nếu dueDate là ngày cụ thể (DD/MM), return green
+  // Kiểm tra nếu là ngày trong quá khứ
+  if (dueDate.match(/^\d{2}\/\d{2}$/)) {
+    const [day, month] = dueDate.split('/');
+    const date = new Date(today.getFullYear(), month - 1, day);
+    if (date < today) {
+      return 'red';
+    }
+  }
+  
+  // Mặc định cho các ngày tương lai xa
   return 'green';
 }
 
@@ -31,6 +50,7 @@ function Task({ task, onToggleComplete }) {
 
   return (
     <div className="task">
+      <span className="task-id">#{task.id}</span>
       <input
         type="checkbox"
         checked={task.completed}

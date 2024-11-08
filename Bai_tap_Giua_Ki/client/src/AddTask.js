@@ -6,7 +6,7 @@ function AddTask({ newTask, newDate, setNewTask, setNewDate, addTask }) {
       <button className="add-button" onClick={addTask}>+</button>
       <input
         type="text"
-        placeholder="Nhiệm vụ trong tuần"
+        placeholder="Nhiệm vụ cần thực hiện"
         value={newTask}
         onChange={(e) => setNewTask(e.target.value)}
       />

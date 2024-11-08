@@ -1,7 +1,7 @@
 .app {
   font-family: Arial, sans-serif;
   padding: 20px;
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -17,18 +17,33 @@ h1 span {
 
 .task-list {
   margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
 }
 
 .task {
   display: flex;
   align-items: flex-start;
   margin-bottom: 10px;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.task-id {
+  min-width: 30px;
+  margin-right: 8px;
+  color: #666;
+  font-size: 0.9em;
 }
 
 .task-content {
   display: flex;
   flex-direction: column;
   margin-left: 10px;
+  flex: 1;
 }
 
 .task-text {
@@ -79,6 +94,7 @@ hr {
 }
 
 .add-task {
+  max-width: 800px; /* Tăng độ rộng form thêm task */
   margin-top: 20px;
   display: flex;
   align-items: center;
@@ -86,6 +102,7 @@ hr {
 
 .add-task input[type="text"],
 .add-task input[type="date"] {
+  width: 100%;
   padding: 8px;
   margin-right: 10px;
   font-size: 1em;
@@ -109,4 +126,32 @@ hr {
 
 .add-button:hover {
   opacity: 0.8;
+}
+
+/* Thêm vào cuối file */
+@media (max-width: 768px) {
+  .task-list {
+    grid-template-columns: 1fr;  /* 1 cột trên mobile */
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .task-list {
+    grid-template-columns: repeat(2, 1fr);  /* 2 cột trên tablet */
+  }
+}
+
+@media (min-width: 1201px) {
+  .task-list {
+    grid-template-columns: repeat(3, 1fr);  /* 3 cột trên desktop */
+  }
+}
+
+/* Style cho task ID */
+.task-id {
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  margin-right: 8px;
 }

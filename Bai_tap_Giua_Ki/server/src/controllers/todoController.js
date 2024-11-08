@@ -31,9 +31,10 @@ class TodoController {
     }
   }
 
+  // Trong hàm createTodo
   async createTodo(req, res) {
     try {
-      const { title, description, due_date } = req.body;
+      const { title, description, due_date, completed } = req.body;
       
       // Validation
       if (!title || !due_date) {
@@ -42,8 +43,17 @@ class TodoController {
           message: 'Title and due date are required'
         });
       }
-
-      const newTodo = await TodoModel.create({ title, description, due_date });
+  
+      // Format date to MySQL format (YYYY-MM-DD)
+      const formattedDate = new Date(due_date).toISOString().split('T')[0];
+  
+      const newTodo = await TodoModel.create({
+        title,
+        description,
+        due_date: formattedDate,
+        completed: completed ? 1 : 0
+      });
+  
       res.status(201).json({
         status: 'success',
         data: newTodo

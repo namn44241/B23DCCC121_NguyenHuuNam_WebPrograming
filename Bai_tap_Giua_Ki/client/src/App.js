@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import TaskList from './TaskList';
 import AddTask from './AddTask';
+import TaskModal from './components/TaskModal';
+import { todoService } from './services/todoService';
 
 function convertDateToDayOfWeek(dateString) {
   const today = new Date();
@@ -16,47 +18,75 @@ function convertDateToDayOfWeek(dateString) {
   const diffTime = date.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  // Nếu trong vòng 7 ngày
+  // Xử lý các ngày
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays < -1) return `${day}/${month}`; // Các ngày trong quá khứ
+  
+  // Các ngày trong tương lai (trong vòng 7 ngày)
   if (diffDays <= 7) {
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return daysOfWeek[date.getDay()];
   }
   
-  // Nếu hơn 7 ngày, trả về định dạng DD/MM
+  // Hơn 7 ngày trong tương lai
   return `${day}/${month}`;
 }
 
 function App() {
-  const [tasks, setTasks] = useState([
-    { id: 1, name: 'Học lập trình web với React', date: 'Tomorrow', completed: false },
-    { id: 2, name: 'Gửi email nộp bài tập về nhà', date: 'Saturday', completed: false },
-    { id: 3, name: 'Học từ vựng tiếng anh mỗi ngày', date: 'Monday', completed: false },
-    { id: 4, name: 'Viết tiểu luận môn Triết học', date: 'Today', completed: false },
-  ]);
-
+  // State cho danh sách tasks và form input
+  const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('');
+  
+  // State cho modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [taskData, setTaskData] = useState({
+    title: '',
+    description: '',
+    due_date: '',
+    completed: false
+  });
 
-  const addTask = () => {
-    if (newTask.trim() !== '' && newDate !== '') {
-      const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-      const formattedDate = convertDateToDayOfWeek(formatDate(newDate));
-      setTasks([...tasks, { 
-        id: newId,
-        name: newTask, 
-        date: formattedDate, 
-        completed: false 
-      }]);
-      setNewTask('');
-      setNewDate('');
-    } else {
-      alert("Điền đầy đủ thông tin nhiệm vụ và ngày đi má!");
+  // Fetch tasks từ API khi component mount
+  useEffect(() => {
+    const getTasks = async () => {
+      try {
+        const data = await todoService.getAllTodos();
+        const formattedTasks = data.map(task => ({
+          id: task.id,
+          name: task.title,
+          date: convertDateToDayOfWeek(formatDate(task.due_date)),
+          completed: Boolean(task.completed)
+        }));
+        setTasks(formattedTasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+  
+    getTasks();
+  }, []);
+
+  // Lấy tasks từ backend
+  const fetchTasks = async () => {
+    try {
+      const data = await todoService.getAllTodos();
+      // Chuyển đổi định dạng ngày cho mỗi task
+      const formattedTasks = data.map(task => ({
+        id: task.id,
+        name: task.title,
+        date: convertDateToDayOfWeek(formatDate(task.due_date)),
+        completed: Boolean(task.completed)
+      }));
+      setTasks(formattedTasks);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
     }
   };
 
+  // Format date từ YYYY-MM-DD sang DD/MM/YYYY
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -65,10 +95,67 @@ function App() {
     return `${day}/${month}/${year}`;
   };
 
-  const toggleTaskComplete = (taskId) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
+  // Xử lý khi click nút thêm task
+  const addTask = () => {
+    if (newTask.trim() !== '' && newDate !== '') {
+      setTaskData({
+        title: newTask,
+        description: '',
+        due_date: newDate,
+        completed: false
+      });
+      setModalOpen(true);
+    } else {
+      alert("Điền đầy đủ thông tin nhiệm vụ và ngày đi má!");
+    }
+  };
+
+  // Xử lý khi submit form trong modal
+  const handleSubmit = async () => {
+    try {
+      const response = await todoService.createTodo(taskData);
+      const newTask = {
+        id: response.data.id,
+        name: response.data.title,
+        date: convertDateToDayOfWeek(formatDate(response.data.due_date)),
+        completed: Boolean(response.data.completed)
+      };
+      
+      setTasks([...tasks, newTask]);
+      setModalOpen(false);
+      setNewTask('');
+      setNewDate('');
+      setTaskData({
+        title: '',
+        description: '',
+        due_date: '',
+        completed: false
+      });
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert('Có lỗi xảy ra khi thêm nhiệm vụ!');
+    }
+  };
+
+  // Xử lý toggle completed
+  const toggleTaskComplete = async (taskId) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        await todoService.updateTodo(taskId, {
+          title: task.name,
+          completed: !task.completed,
+          due_date: task.date // Giữ nguyên date hiện tại
+        });
+        
+        setTasks(tasks.map(t => 
+          t.id === taskId ? { ...t, completed: !t.completed } : t
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+    }
   };
 
   return (
@@ -83,6 +170,13 @@ function App() {
         setNewTask={setNewTask}
         setNewDate={setNewDate}
         addTask={addTask}
+      />
+      <TaskModal
+        open={modalOpen}
+        handleClose={() => setModalOpen(false)}
+        taskData={taskData}
+        setTaskData={setTaskData}
+        handleSubmit={handleSubmit}
       />
     </div>
   );
