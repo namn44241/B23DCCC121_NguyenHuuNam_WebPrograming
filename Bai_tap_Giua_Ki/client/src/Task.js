@@ -45,16 +45,28 @@ function getColorByDueDate(dueDate) {
   return 'green';
 }
 
-function Task({ task, onToggleComplete }) {
+function Task({ task, onToggleComplete, onEdit }) {
   const dueColor = getColorByDueDate(task.date);
 
+  const handleClick = (e) => {
+    // Nếu không phải click vào checkbox thì mở form edit
+    if (!e.target.classList.contains('custom-checkbox')) {
+      onEdit(task);
+    }
+  };
+
+  const handleCheckboxClick = (e) => {
+    e.stopPropagation(); // Ngăn sự kiện click lan ra task
+    onToggleComplete(task.id);
+  };
+
   return (
-    <div className="task">
+    <div className="task" onClick={handleClick}>
       <span className="task-id">#{task.id}</span>
       <input
         type="checkbox"
         checked={task.completed}
-        onChange={() => onToggleComplete(task.id)}
+        onChange={handleCheckboxClick}
         className={`custom-checkbox ${dueColor}`}
       />
       <div className="task-content">

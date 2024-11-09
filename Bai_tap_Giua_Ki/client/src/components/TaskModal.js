@@ -1,67 +1,76 @@
-import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  Box
-} from '@mui/material';
+import React, { useEffect } from 'react';
+import { Checkbox } from '@mui/material';
 
 function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit }) {
+  // Ngăn scroll của body khi modal mở
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleSubmitWithComplete = () => {
+    // Đảm bảo trạng thái completed được gửi đi
+    handleSubmit({
+      ...taskData,
+      completed: taskData.completed || false
+    });
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Thêm nhiệm vụ mới</DialogTitle>
-      <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-          <TextField
-            label="Tiêu đề"
-            value={taskData.title}
-            onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
-            required
-            fullWidth
-          />
-          
-          <TextField
-            label="Mô tả"
-            value={taskData.description || ''}
-            onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
-            multiline
-            rows={3}
-            fullWidth
-          />
-          
-          <TextField
-            label="Ngày đến hạn"
-            type="date"
-            value={taskData.due_date}
-            onChange={(e) => setTaskData({ ...taskData, due_date: e.target.value })}
-            required
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={taskData.completed || false}
-                onChange={(e) => setTaskData({ ...taskData, completed: e.target.checked })}
-              />
-            }
-            label="Đã hoàn thành"
-          />
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="inherit">Hủy</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          Thêm nhiệm vụ
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Thêm nhiệm vụ mới</h2>
+        
+        <div className="modal-body">
+          <div className="form-field">
+            <label>Tiêu đề *</label>
+            <input
+              type="text"
+              value={taskData.title}
+              onChange={(e) => setTaskData({...taskData, title: e.target.value})}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Mô tả</label>
+            <textarea
+              value={taskData.description || ''}
+              onChange={(e) => setTaskData({...taskData, description: e.target.value})}
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Ngày đến hạn *</label>
+            <input
+              type="date"
+              value={taskData.due_date}
+              onChange={(e) => setTaskData({...taskData, due_date: e.target.value})}
+            />
+          </div>
+
+          <div className="form-field checkbox">
+            <Checkbox
+              checked={taskData.completed || false}
+              onChange={(e) => setTaskData({...taskData, completed: e.target.checked})}
+            />
+            <label>Đã hoàn thành</label>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
+          <button className="btn-cancel" onClick={handleClose}>Hủy</button>
+          <button className="btn-submit" onClick={handleSubmitWithComplete}>Thêm nhiệm vụ</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

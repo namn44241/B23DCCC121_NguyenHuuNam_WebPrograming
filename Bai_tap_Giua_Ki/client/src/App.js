@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import TaskList from './TaskList';
 import AddTask from './AddTask';
 import TaskModal from './components/TaskModal';
+import EditTaskModal from './components/EditTaskModal';
 import { todoService } from './services/todoService';
+
 
 function convertDateToDayOfWeek(dateString) {
   const today = new Date();
@@ -39,6 +41,9 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('');
+
+  const [sortOrder, setSortOrder] = useState('asc'); 
+  const [isColorSorted, setIsColorSorted] = useState(false);
   
   // State cho modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -48,6 +53,8 @@ function App() {
     due_date: '',
     completed: false
   });
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   // Fetch tasks từ API khi component mount
   useEffect(() => {
@@ -57,6 +64,7 @@ function App() {
         const formattedTasks = data.map(task => ({
           id: task.id,
           name: task.title,
+          description: task.description, // Thêm description vào state
           date: convertDateToDayOfWeek(formatDate(task.due_date)),
           completed: Boolean(task.completed)
         }));
@@ -69,23 +77,20 @@ function App() {
     getTasks();
   }, []);
 
-  // Lấy tasks từ backend
-  const fetchTasks = async () => {
-    try {
-      const data = await todoService.getAllTodos();
-      // Chuyển đổi định dạng ngày cho mỗi task
-      const formattedTasks = data.map(task => ({
-        id: task.id,
-        name: task.title,
-        date: convertDateToDayOfWeek(formatDate(task.due_date)),
-        completed: Boolean(task.completed)
-      }));
-      setTasks(formattedTasks);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
+
+  // Hàm sắp xếp theo ID
+  const handleSortById = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    setTasks(prev => [...prev].sort((a, b) => {
+      return sortOrder === 'asc' ? b.id - a.id : a.id - b.id;
+    }));
   };
 
+  // Hàm sắp xếp theo màu
+  const handleSortByColor = () => {
+    setIsColorSorted(prev => !prev);
+  };
+  
   // Format date từ YYYY-MM-DD sang DD/MM/YYYY
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -113,10 +118,26 @@ function App() {
   // Xử lý khi submit form trong modal
   const handleSubmit = async () => {
     try {
-      const response = await todoService.createTodo(taskData);
+      // Log để kiểm tra dữ liệu gửi đi
+      console.log('Sending task data:', taskData);
+  
+      const taskToCreate = {
+        title: taskData.title,
+        description: taskData.description || '',
+        due_date: taskData.due_date,
+        completed: taskData.completed ? 1 : 0  // Chuyển boolean thành 0/1 cho MySQL
+      };
+  
+      const response = await todoService.createTodo(taskToCreate);
+      
+      // Log để kiểm tra response
+      console.log('Server response:', response);
+  
+      // Tạo task mới với trạng thái completed đúng
       const newTask = {
         id: response.data.id,
         name: response.data.title,
+        description: response.data.description, 
         date: convertDateToDayOfWeek(formatDate(response.data.due_date)),
         completed: Boolean(response.data.completed)
       };
@@ -142,15 +163,34 @@ function App() {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (task) {
-        await todoService.updateTodo(taskId, {
-          title: task.name,
-          completed: !task.completed,
-          due_date: task.date // Giữ nguyên date hiện tại
-        });
+        // Lấy task detail từ server
+        const taskDetail = await todoService.getTodoById(taskId);
         
-        setTasks(tasks.map(t => 
-          t.id === taskId ? { ...t, completed: !t.completed } : t
-        ));
+        // Xử lý ngày tháng - thêm 1 ngày để bù trừ múi giờ
+        const date = new Date(taskDetail.due_date);
+        date.setDate(date.getDate() + 1);
+        const isoDate = date.toISOString().split('T')[0];
+        
+        // Gửi tất cả thông tin của task, chỉ đổi completed
+        const updatedTaskData = {
+          title: taskDetail.title,
+          description: taskDetail.description,
+          due_date: isoDate, // Sử dụng ngày đã được xử lý
+          completed: task.completed ? 0 : 1
+        };
+  
+        console.log('Sending toggle data:', updatedTaskData);
+  
+        await todoService.updateTodo(taskId, updatedTaskData);
+        
+        // Cập nhật UI
+        setTasks(prevTasks => 
+          prevTasks.map(t => 
+            t.id === taskId 
+              ? {...t, completed: !t.completed}
+              : t
+          )
+        );
       }
     } catch (error) {
       console.error('Error updating task:', error);
@@ -158,12 +198,177 @@ function App() {
     }
   };
 
+   // Thêm hàm xử lý edit task
+   const handleEditTask = async (task) => {
+    try {
+      const taskDetail = await todoService.getTodoById(task.id);
+      
+      console.log('Task detail from server:', taskDetail);
+      
+      // Xử lý ngày tháng
+      const date = new Date(taskDetail.due_date);
+      date.setDate(date.getDate() + 1); // Thêm 1 ngày để bù trừ
+      const formattedDate = date.toISOString().split('T')[0];
+      
+      console.log('Original date:', taskDetail.due_date);
+      console.log('Formatted date:', formattedDate);
+      
+      setEditingTask(task);
+      setTaskData({
+        id: task.id,
+        title: taskDetail.title,
+        description: taskDetail.description || '',
+        due_date: formattedDate,
+        completed: Boolean(taskDetail.completed)
+      });
+      setEditModalOpen(true);
+    } catch (error) {
+      console.error('Error getting task detail:', error);
+      alert('Có lỗi xảy ra khi lấy thông tin nhiệm vụ!');
+    }
+  };
+
+  // Thêm hàm xử lý delete task
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await todoService.deleteTodo(taskId);
+      setTasks(tasks.filter(t => t.id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Có lỗi xảy ra khi xóa nhiệm vụ!');
+    }
+  };
+
+  // Thêm hàm xử lý update task
+  const handleUpdateTask = async () => {
+    try {
+      // Log để kiểm tra dữ liệu đầu vào
+      console.log('Current taskData:', taskData);
+      console.log('Current editingTask:', editingTask);
+  
+      // Xử lý ngày tháng
+      const date = new Date(taskData.due_date);
+      const isoDate = date.toISOString().split('T')[0];
+      
+      console.log('Original due_date:', taskData.due_date);
+      console.log('Processed date:', isoDate);
+  
+      const updatedTaskData = {
+        title: taskData.title,
+        description: taskData.description || '',
+        due_date: isoDate,
+        completed: taskData.completed ? 1 : 0
+      };
+  
+      console.log('Sending to server:', updatedTaskData);
+  
+      // Gọi API update
+      const response = await todoService.updateTodo(editingTask.id, updatedTaskData);
+      
+      console.log('Server response:', response);
+  
+      if (!response || !response.due_date) {
+        throw new Error('Invalid server response');
+      }
+  
+      // Cập nhật UI
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === editingTask.id 
+            ? {
+                ...t,
+                name: response.title,
+                description: response.description,
+                date: convertDateToDayOfWeek(formatDate(response.due_date)),
+                completed: Boolean(response.completed)
+              }
+            : t
+        )
+      );
+      
+      setEditModalOpen(false);
+      setEditingTask(null);
+      setTaskData({
+        title: '',
+        description: '',
+        due_date: '',
+        completed: false
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Có lỗi xảy ra khi cập nhật nhiệm vụ!');
+    }
+  };
+
+  // Trong phần return của App.js
   return (
     <div className="app">
       <h1>
         My work <span role="img" aria-label="target">🎯</span>
       </h1>
-      <TaskList tasks={tasks} onToggleComplete={toggleTaskComplete} />
+      
+      <div className="sort-buttons">
+        <button 
+          className={`sort-button ${sortOrder === 'desc' ? 'active' : ''}`} 
+          onClick={handleSortById}
+        >
+          Sắp xếp theo ID {sortOrder === 'asc' ? '↑' : '↓'}
+        </button>
+        <button 
+          className={`sort-button ${isColorSorted ? 'active' : ''}`} 
+          onClick={handleSortByColor}
+        >
+          Sắp xếp theo màu
+        </button>
+      </div>
+  
+      {!isColorSorted ? (
+        <TaskList 
+          tasks={tasks} 
+          onToggleComplete={toggleTaskComplete}
+          onEdit={handleEditTask}
+        />
+      ) : (
+        <div className="color-sorted-list">
+          <div className="color-column">
+            <h3>Gấp</h3>
+            <TaskList
+              tasks={tasks.filter(task => task.date === 'Today' || task.date.includes('Yesterday'))}
+              onToggleComplete={toggleTaskComplete}
+              onEdit={handleEditTask}
+            />
+          </div>
+          
+          <div className="color-column">
+            <h3>Trong tuần</h3>
+            <TaskList
+              tasks={tasks.filter(task => 
+                task.date === 'Tomorrow' || 
+                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(task.date)
+              )}
+              onToggleComplete={toggleTaskComplete}
+              onEdit={handleEditTask}
+            />
+          </div>
+          
+          <div className="color-column">
+            <h3>Lâu hơn</h3>
+            <TaskList
+              tasks={tasks.filter(task => {
+                if (!task.date.includes('/')) return false;
+                const [day, month] = task.date.split('/');
+                const taskDate = new Date(new Date().getFullYear(), month - 1, day);
+                const diffTime = taskDate.getTime() - new Date().getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays > 7;
+              })}
+              onToggleComplete={toggleTaskComplete}
+              onEdit={handleEditTask}
+            />
+          </div>
+        </div>
+      )}
+  
       <AddTask
         newTask={newTask}
         newDate={newDate}
@@ -171,12 +376,36 @@ function App() {
         setNewDate={setNewDate}
         addTask={addTask}
       />
+      
       <TaskModal
         open={modalOpen}
         handleClose={() => setModalOpen(false)}
         taskData={taskData}
         setTaskData={setTaskData}
         handleSubmit={handleSubmit}
+      />
+      
+      <EditTaskModal
+        open={editModalOpen}
+        handleClose={() => {
+          setEditModalOpen(false);
+          setEditingTask(null);
+          setTaskData({
+            title: '',
+            description: '',
+            due_date: '',
+            completed: false
+          });
+        }}
+        taskData={taskData}
+        setTaskData={setTaskData}
+        handleSubmit={handleUpdateTask}
+        handleDelete={() => {
+          if (window.confirm('Bạn có chắc muốn xóa nhiệm vụ này?')) {
+            handleDeleteTask(editingTask.id);
+            setEditModalOpen(false);
+          }
+        }}
       />
     </div>
   );

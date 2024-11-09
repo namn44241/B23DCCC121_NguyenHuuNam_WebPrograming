@@ -21,18 +21,18 @@ class TodoModel {
 
   async create(todoData) {
     try {
-      const { title, description, due_date } = todoData;
+      const { title, description, due_date, completed } = todoData;
       const [result] = await db.query(
-        'INSERT INTO todos (title, description, due_date) VALUES (?, ?, ?)',
-        [title, description, due_date]
+        'INSERT INTO todos (title, description, due_date, completed) VALUES (?, ?, ?, ?)',
+        [title, description, due_date, completed]
       );
-      return {
-        id: result.insertId,
-        title,
-        description,
-        due_date,
-        completed: 0
-      };
+  
+      const [newTodo] = await db.query(
+        'SELECT * FROM todos WHERE id = ?',
+        [result.insertId]
+      );
+  
+      return newTodo[0];
     } catch (error) {
       throw new Error('Error creating todo: ' + error.message);
     }
@@ -41,22 +41,29 @@ class TodoModel {
   async update(id, todoData) {
     try {
       const { title, description, due_date, completed } = todoData;
-      const [result] = await db.query(
-        'UPDATE todos SET title = ?, description = ?, due_date = ?, completed = ? WHERE id = ?',
-        [title, description, due_date, completed ? 1 : 0, id]
-      );
+      
+      const query = `
+        UPDATE todos 
+        SET title = ?, description = ?, due_date = ?, completed = ?
+        WHERE id = ?
+      `;
+      
+      const [result] = await db.execute(query, [
+        title,
+        description,
+        due_date, // Sử dụng ngày đã format ở controller
+        completed,
+        id
+      ]);
+  
       if (result.affectedRows === 0) {
         throw new Error('Todo not found');
       }
-      return {
-        id,
-        title,
-        description,
-        due_date,
-        completed: completed ? 1 : 0
-      };
+  
+      return { id, ...todoData };
     } catch (error) {
-      throw new Error('Error updating todo: ' + error.message);
+      console.error('Model - Error in update:', error);
+      throw error;
     }
   }
 
