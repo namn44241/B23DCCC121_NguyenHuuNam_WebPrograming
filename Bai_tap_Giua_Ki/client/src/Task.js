@@ -1,6 +1,7 @@
 import React from 'react';
 
-function getColorByDueDate(dueDate) {
+// Thêm export cho hàm này
+export function getColorByDueDate(dueDate) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -45,18 +46,18 @@ function getColorByDueDate(dueDate) {
   return 'green';
 }
 
+// Component Task vẫn giữ nguyên
 function Task({ task, onToggleComplete, onEdit }) {
   const dueColor = getColorByDueDate(task.date);
 
   const handleClick = (e) => {
-    // Nếu không phải click vào checkbox thì mở form edit
     if (!e.target.classList.contains('custom-checkbox')) {
       onEdit(task);
     }
   };
 
   const handleCheckboxClick = (e) => {
-    e.stopPropagation(); // Ngăn sự kiện click lan ra task
+    e.stopPropagation();
     onToggleComplete(task.id);
   };
 
