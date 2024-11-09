@@ -12,69 +12,156 @@ class TodoModel {
 
   async getById(id) {
     try {
-      const [rows] = await db.query('SELECT * FROM todos WHERE id = ?', [id]);
-      return rows[0];
+      // Lấy task chính
+      const [todos] = await db.query('SELECT * FROM todos WHERE id = ?', [id]);
+      if (todos.length === 0) return null;
+
+      // Lấy subtasks
+      const [subtasks] = await db.query('SELECT * FROM subtasks WHERE todo_id = ?', [id]);
+      
+      return {
+        ...todos[0],
+        subtasks
+      };
     } catch (error) {
       throw new Error('Error getting todo: ' + error.message);
     }
   }
 
   async create(todoData) {
+    const conn = await db.getConnection();
+    
     try {
-      const { title, description, due_date, completed } = todoData;
-      const [result] = await db.query(
+      await conn.beginTransaction();
+
+      const { title, description, due_date, completed, subtasks } = todoData;
+      
+      // Tạo task chính
+      const [result] = await conn.query(
         'INSERT INTO todos (title, description, due_date, completed) VALUES (?, ?, ?, ?)',
         [title, description, due_date, completed]
       );
-  
-      const [newTodo] = await db.query(
-        'SELECT * FROM todos WHERE id = ?',
-        [result.insertId]
-      );
-  
-      return newTodo[0];
+
+      const todoId = result.insertId;
+
+      // Thêm subtasks nếu có
+      if (subtasks && subtasks.length > 0) {
+        const subtaskValues = subtasks.map(subtask => [
+          todoId,
+          subtask.title,
+          subtask.due_date,
+          subtask.completed ? 1 : 0,
+          subtask.created_by || todoData.created_by, // Thêm created_by
+          subtask.assigned_to
+        ]);
+
+        await conn.query(
+          'INSERT INTO subtasks (todo_id, title, due_date, completed, created_by, assigned_to) VALUES ?',
+          [subtaskValues]
+        );
+      }
+
+      await conn.commit();
+      conn.release();
+
+      // Lấy todo vừa tạo kèm subtasks
+      return this.getById(todoId);
+
     } catch (error) {
+      await conn.rollback();
+      conn.release();
       throw new Error('Error creating todo: ' + error.message);
     }
   }
 
   async update(id, todoData) {
+    const conn = await db.getConnection();
+    
     try {
-      const { title, description, due_date, completed } = todoData;
+      await conn.beginTransaction();
+
+      const { title, description, due_date, completed, subtasks } = todoData;
       
-      const query = `
-        UPDATE todos 
-        SET title = ?, description = ?, due_date = ?, completed = ?
-        WHERE id = ?
-      `;
-      
-      const [result] = await db.execute(query, [
-        title,
-        description,
-        due_date, // Sử dụng ngày đã format ở controller
-        completed,
-        id
-      ]);
-  
+      // Cập nhật task chính
+      const [result] = await conn.query(
+        'UPDATE todos SET title = ?, description = ?, due_date = ?, completed = ? WHERE id = ?',
+        [title, description, due_date, completed, id]
+      );
+
       if (result.affectedRows === 0) {
+        await conn.rollback();
+        conn.release();
         throw new Error('Todo not found');
       }
-  
-      return { id, ...todoData };
+
+      // Cập nhật subtasks
+      await conn.query('DELETE FROM subtasks WHERE todo_id = ?', [id]);
+
+      if (subtasks && subtasks.length > 0) {
+        const subtaskValues = subtasks.map(subtask => [
+          id,
+          subtask.title,
+          subtask.due_date,
+          subtask.completed ? 1 : 0,
+          subtask.created_by || todoData.created_by, // Thêm created_by
+          subtask.assigned_to
+        ]);
+
+        await conn.query(
+          'INSERT INTO subtasks (todo_id, title, due_date, completed, created_by, assigned_to) VALUES ?',
+          [subtaskValues]
+        );
+      }
+
+      await conn.commit();
+      conn.release();
+
+      // Lấy todo đã cập nhật kèm subtasks
+      return this.getById(id);
+
     } catch (error) {
-      console.error('Model - Error in update:', error);
-      throw error;
+      await conn.rollback();
+      conn.release();
+      throw new Error('Error updating todo: ' + error.message);
+    }
+  }
+
+  async getByAssignedUser(userId) {
+    try {
+      const [rows] = await db.query(
+        'SELECT * FROM todos WHERE assigned_to = ? ORDER BY id DESC',
+        [userId]
+      );
+      return rows;
+    } catch (error) {
+      throw new Error('Error getting todos by user: ' + error.message);
     }
   }
 
   async delete(id) {
+    const conn = await db.getConnection();
+    
     try {
-      const [result] = await db.query('DELETE FROM todos WHERE id = ?', [id]);
+      await conn.beginTransaction();
+
+      // Xóa subtasks trước
+      await conn.query('DELETE FROM subtasks WHERE todo_id = ?', [id]);
+      
+      // Xóa task chính
+      const [result] = await conn.query('DELETE FROM todos WHERE id = ?', [id]);
+      
       if (result.affectedRows === 0) {
+        await conn.rollback();
+        conn.release();
         throw new Error('Todo not found');
       }
+
+      await conn.commit();
+      conn.release();
       return true;
     } catch (error) {
+      await conn.rollback();
+      conn.release();
       throw new Error('Error deleting todo: ' + error.message);
     }
   }

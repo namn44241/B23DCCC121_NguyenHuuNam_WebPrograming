@@ -2,64 +2,101 @@ const API_URL = 'http://localhost:5000/api/todos';
 
 export const todoService = {
   async getAllTodos() {
-    const response = await fetch(API_URL);
-    return response.json();
-  },
-
-  async createTodo(todoData) {
-    // Chuyển đổi completed từ boolean sang số trước khi gửi
-    const dataToSend = {
-      ...todoData,
-      completed: todoData.completed ? 1 : 0
-    };
-
-    console.log('Sending to server:', dataToSend); // Debug log
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(dataToSend)
-    });
-
-    const data = await response.json();
-    console.log('Server response:', data); // Debug log
-    return data;
-  },
-
-  async updateTodo(id, todoData) {
-    console.log('TodoService - Sending update:', todoData);
-    
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(todoData)
-    });
-  
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Server error:', error);
-      throw new Error('Network response was not ok');
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      if (data.status === 'success') {
+        return data.data; // Trả về mảng todos
+      }
+      throw new Error(data.message || 'Failed to get todos');
+    } catch (error) {
+      console.error('Error in getAllTodos:', error);
+      throw error;
     }
-  
-    const data = await response.json();
-    console.log('TodoService - Response:', data);
-    return data;
-  },
-
-  async deleteTodo(id) {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE'
-    });
-    return response.json();
   },
 
   async getTodoById(id) {
-    const response = await fetch(`${API_URL}/${id}`);
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/${id}`);
+      const data = await response.json();
+      if (data.status === 'success') {
+        return data.data; // Trả về chỉ phần data
+      }
+      throw new Error(data.message || 'Failed to get todo');
+    } catch (error) {
+      console.error('Error in getTodoById:', error);
+      throw error;
+    }
   },
 
+  async createTodo(todoData) {
+    try {
+      const dataToSend = {
+        ...todoData,
+        completed: todoData.completed ? 1 : 0
+      };
+
+      console.log('Sending to server:', dataToSend);
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend)
+      });
+
+      const data = await response.json();
+      console.log('Server response:', data);
+
+      if (data.status === 'success') {
+        return data.data; // Trả về chỉ phần data
+      }
+      throw new Error(data.message || 'Failed to create todo');
+    } catch (error) {
+      console.error('Error in createTodo:', error);
+      throw error;
+    }
+  },
+
+  async updateTodo(id, todoData) {
+    try {
+      console.log('TodoService - Sending update:', todoData);
+      
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(todoData)
+      });
+
+      const data = await response.json();
+      console.log('TodoService - Response:', data);
+
+      if (data.status === 'success') {
+        return data.data; // Trả về chỉ phần data
+      }
+      throw new Error(data.message || 'Failed to update todo');
+    } catch (error) {
+      console.error('Error in updateTodo:', error);
+      throw error;
+    }
+  },
+
+  async deleteTodo(id) {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        return true;
+      }
+      throw new Error(data.message || 'Failed to delete todo');
+    } catch (error) {
+      console.error('Error in deleteTodo:', error);
+      throw error;
+    }
+  }
 };

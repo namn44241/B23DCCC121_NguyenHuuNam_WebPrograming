@@ -7,6 +7,7 @@ import EditTaskModal from './components/EditTaskModal';
 import Login from './components/Login';
 import { todoService } from './services/todoService';
 import { getColorByDueDate } from './Task';
+import { userService } from './services/userService';
 
 
 
@@ -88,22 +89,58 @@ function App() {
     const getTasks = async () => {
       try {
         const data = await todoService.getAllTodos();
-        const formattedTasks = data.map(task => ({
-          id: task.id,
-          name: task.title,
-          description: task.description,
-          date: convertDateToDayOfWeek(formatDate(task.due_date)),
-          completed: Boolean(task.completed)
-        }));
-        setTasks(formattedTasks);
-        console.log('Fetched tasks:', data); // Thêm log để kiểm tra
+        if (Array.isArray(data)) {
+          const formattedTasks = data
+            // Lọc tasks theo quyền ở client
+            .filter(task => {
+              if (!user) return false;
+              if (user.role === 'admin') return true;
+              if (user.role === 'manager') return true;
+              return task.assigned_to === user.id;
+            })
+            .map(task => ({
+              id: task.id,
+              name: task.title,
+              description: task.description,
+              date: convertDateToDayOfWeek(formatDate(task.due_date)),
+              completed: Boolean(task.completed),
+              assigned_to: task.assigned_to
+            }));
+          setTasks(formattedTasks);
+          console.log('Fetched tasks:', data);
+        } else {
+          console.error('Invalid data format:', data);
+          setTasks([]);
+        }
       } catch (error) {
         console.error('Error fetching tasks:', error);
+        setTasks([]);
       }
     };
-  
+
+    const getUsers = async () => {
+      try {
+        const data = await userService.getAllUsers();
+        console.log('Raw users data:', data); // Log để kiểm tra format
+        
+        // Kiểm tra và xử lý data từ API
+        if (data && data.status === 'success' && Array.isArray(data.data)) {
+          setUsers(data.data); // Lấy mảng users từ data.data
+        } else {
+          setUsers([]); // Set empty array nếu không có data hợp lệ
+          console.error('Invalid users data format:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setUsers([]); // Set empty array khi có lỗi
+      }
+    };
+
     if (user) {
       getTasks();
+      if (user.role === 'admin' || user.role === 'manager') {
+        getUsers(); // Chỉ admin và manager mới cần danh sách users
+      }
     }
   }, [user]);
 
@@ -207,28 +244,25 @@ function App() {
   // Xử lý khi submit form trong modal
   const handleSubmit = async () => {
     try {
-      // Log để kiểm tra dữ liệu gửi đi
       console.log('Sending task data:', taskData);
   
       const taskToCreate = {
         title: taskData.title,
         description: taskData.description || '',
         due_date: taskData.due_date,
-        completed: taskData.completed ? 1 : 0  // Chuyển boolean thành 0/1 cho MySQL
+        completed: taskData.completed ? 1 : 0
       };
   
       const response = await todoService.createTodo(taskToCreate);
-      
-      // Log để kiểm tra response
-      console.log('Server response:', response);
+      console.log('Server response:', response); // response là data trực tiếp, không cần .data nữa
   
       // Tạo task mới với trạng thái completed đúng
       const newTask = {
-        id: response.data.id,
-        name: response.data.title,
-        description: response.data.description, 
-        date: convertDateToDayOfWeek(formatDate(response.data.due_date)),
-        completed: Boolean(response.data.completed)
+        id: response.id, // Bỏ .data
+        name: response.title, // Bỏ .data
+        description: response.description, // Bỏ .data
+        date: convertDateToDayOfWeek(formatDate(response.due_date)), // Bỏ .data
+        completed: Boolean(response.completed) // Bỏ .data
       };
       
       setTasks([...tasks, newTask]);

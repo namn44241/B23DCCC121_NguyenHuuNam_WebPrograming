@@ -103,7 +103,7 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
                     completed: false
                   }
                 ])}
-                disabled={taskData.completed}
+                disabled={taskData.completed} // Thêm điều kiện disable
                 style={{ 
                   opacity: taskData.completed ? 0.5 : 1,
                   cursor: taskData.completed ? 'not-allowed' : 'pointer'

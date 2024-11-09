@@ -40,6 +40,27 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, use
             />
           </div>
 
+          {/* Thêm select box cho assigned_to nếu user là admin */}
+          {user.role === 'admin' && (
+            <div className="form-field">
+              <label>Giao cho</label>
+              <select
+                value={taskData.assigned_to || ''}
+                onChange={(e) => setTaskData({
+                  ...taskData, 
+                  assigned_to: e.target.value ? Number(e.target.value) : null
+                })}
+              >
+                <option value="">-- Chọn người thực hiện --</option>
+                {users?.filter(u => u.role === 'user').map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="form-field">
             <label>
               <Checkbox

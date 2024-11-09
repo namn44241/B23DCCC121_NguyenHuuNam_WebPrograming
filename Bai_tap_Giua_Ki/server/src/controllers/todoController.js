@@ -3,8 +3,13 @@ const TodoModel = require('../models/todoModel');
 class TodoController {
   async getAllTodos(req, res) {
     try {
+      // Lấy tất cả todos, không cần check role
       const todos = await TodoModel.getAll();
-      res.json(todos);
+      
+      res.json({
+        status: 'success',
+        data: todos
+      });
     } catch (error) {
       console.error('Controller - Error in getAllTodos:', error);
       res.status(500).json({ 
@@ -23,7 +28,10 @@ class TodoController {
           message: 'Todo not found' 
         });
       }
-      res.json(todo);
+      res.json({
+        status: 'success',
+        data: todo  // Đã bao gồm subtasks từ model
+      });
     } catch (error) {
       console.error('Controller - Error in getTodoById:', error);
       res.status(500).json({ 
@@ -35,10 +43,7 @@ class TodoController {
 
   async createTodo(req, res) {
     try {
-      const { title, description, due_date, completed } = req.body;
-      
-      // Log request data
-      console.log('Controller - Received create request:', req.body);
+      const { title, description, due_date, completed, subtasks } = req.body;
       
       // Validation
       if (!title || !due_date) {
@@ -47,24 +52,23 @@ class TodoController {
           message: 'Title and due date are required'
         });
       }
-  
-      // Format date to MySQL format (YYYY-MM-DD)
+
+      // Format date
       const formattedDate = new Date(due_date).toISOString().split('T')[0];
   
       const todoData = {
         title,
         description: description || '',
         due_date: formattedDate,
-        completed: completed ? 1 : 0  // Đảm bảo giá trị là 1 hoặc 0
+        completed: completed ? 1 : 0,
+        subtasks: subtasks?.map(subtask => ({
+          ...subtask,
+          due_date: new Date(subtask.due_date).toISOString().split('T')[0],
+          completed: subtask.completed ? 1 : 0
+        }))
       };
 
-      // Log processed data
-      console.log('Controller - Processed todo data:', todoData);
-  
       const newTodo = await TodoModel.create(todoData);
-  
-      // Log created todo
-      console.log('Controller - Created todo:', newTodo);
   
       res.status(201).json({
         status: 'success',
@@ -82,28 +86,27 @@ class TodoController {
   async updateTodo(req, res) {
     try {
       const { id } = req.params;
-      const { title, description, due_date, completed } = req.body;
+      const { title, description, due_date, completed, subtasks } = req.body;
   
-      console.log('Received due_date:', due_date); // Debug log
-  
-      // Đảm bảo due_date không bị thay đổi bởi timezone
       const formattedDate = due_date ? due_date.split('T')[0] : null;
   
       const todoData = {
         title,
         description: description || '',
-        due_date: formattedDate, // Sử dụng ngày không có timezone
-        completed: completed !== undefined ? completed : 0
+        due_date: formattedDate,
+        completed: completed !== undefined ? completed : 0,
+        subtasks: subtasks?.map(subtask => ({
+          ...subtask,
+          due_date: new Date(subtask.due_date).toISOString().split('T')[0],
+          completed: subtask.completed ? 1 : 0
+        }))
       };
-  
-      console.log('Saving to database:', todoData); // Debug log
   
       const updatedTodo = await TodoModel.update(id, todoData);
       
-      // Trả về đúng định dạng ngày đã lưu
       res.json({
-        ...updatedTodo,
-        due_date: formattedDate
+        status: 'success',
+        data: updatedTodo
       });
     } catch (error) {
       console.error('Controller - Error in updateTodo:', error);
