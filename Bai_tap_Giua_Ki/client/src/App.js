@@ -49,6 +49,7 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [newDate, setNewDate] = useState('');
+  const [users, setUsers] = useState([]);
 
   const [sortOrder, setSortOrder] = useState('asc'); 
   const [isColorSorted, setIsColorSorted] = useState(false);
@@ -77,6 +78,9 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setUser(null);
+    // Có thể thêm reset các state khác nếu cần
+    setTasks([]);
+    setUsers([]);
   };
 
   // Fetch tasks từ API khi component mount
@@ -87,24 +91,21 @@ function App() {
         const formattedTasks = data.map(task => ({
           id: task.id,
           name: task.title,
-          description: task.description, // Thêm description vào state
+          description: task.description,
           date: convertDateToDayOfWeek(formatDate(task.due_date)),
           completed: Boolean(task.completed)
         }));
         setTasks(formattedTasks);
+        console.log('Fetched tasks:', data); // Thêm log để kiểm tra
       } catch (error) {
         console.error('Error fetching tasks:', error);
       }
     };
-
+  
     if (user) {
       getTasks();
     }
-  }, [user]); 
-
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
+  }, [user]);
 
   // Thêm hàm xử lý sort theo ngày
   const handleSortByDate = () => {
@@ -386,9 +387,11 @@ function App() {
       console.error('Error updating task:', error);
       alert('Có lỗi xảy ra khi cập nhật nhiệm vụ!');
     }
-
-
   };
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   // Trong phần return của App.js
   return (
@@ -505,6 +508,8 @@ function App() {
         taskData={taskData}
         setTaskData={setTaskData}
         handleSubmit={handleSubmit}
+        user={user}    
+        users={users}
       />
       
       <EditTaskModal
@@ -522,6 +527,8 @@ function App() {
         taskData={taskData}
         setTaskData={setTaskData}
         handleSubmit={handleUpdateTask}
+        currentUser={user}  
+        users={users}
         handleDelete={() => {
           if (window.confirm('Bạn có chắc muốn xóa nhiệm vụ này?')) {
             handleDeleteTask(editingTask.id);

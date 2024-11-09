@@ -1,28 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { Checkbox } from '@mui/material';
 
-function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit }) {
-  // Ngăn scroll của body khi modal mở
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [open]);
+function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, user, users }) {
+  const [subtasks, setSubtasks] = useState([]);
 
   if (!open) return null;
-
-  const handleSubmitWithComplete = () => {
-    // Đảm bảo trạng thái completed được gửi đi
-    handleSubmit({
-      ...taskData,
-      completed: taskData.completed || false
-    });
-  };
 
   return (
     <div className="modal-overlay">
@@ -36,9 +18,10 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit }) {
               type="text"
               value={taskData.title}
               onChange={(e) => setTaskData({...taskData, title: e.target.value})}
+              required
             />
           </div>
-
+          
           <div className="form-field">
             <label>Mô tả</label>
             <textarea
@@ -46,28 +29,149 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit }) {
               onChange={(e) => setTaskData({...taskData, description: e.target.value})}
             />
           </div>
-
+          
           <div className="form-field">
             <label>Ngày đến hạn *</label>
             <input
               type="date"
               value={taskData.due_date}
               onChange={(e) => setTaskData({...taskData, due_date: e.target.value})}
+              required
             />
           </div>
 
-          <div className="form-field checkbox">
-            <Checkbox
-              checked={taskData.completed || false}
-              onChange={(e) => setTaskData({...taskData, completed: e.target.checked})}
-            />
-            <label>Đã hoàn thành</label>
+          <div className="form-field">
+            <label>
+              <Checkbox
+                checked={taskData.completed}
+                onChange={(e) => setTaskData({...taskData, completed: e.target.checked})}
+              />
+              Đã hoàn thành
+            </label>
+          </div>
+
+          {/* Phần nhiệm vụ phụ */}
+          <div className="subtasks-section">
+            <div className="section-header">
+              <h3>Nhiệm vụ phụ</h3>
+              <button 
+                type="button" 
+                className="add-button"
+                onClick={() => setSubtasks([...subtasks, {
+                  id: subtasks.length + 1,
+                  title: '',
+                  due_date: '',
+                  created_by: user?.id,
+                  assigned_to: null,
+                  completed: false
+                }])}
+                disabled={taskData.completed}
+                style={{ 
+                  opacity: taskData.completed ? 0.5 : 1,
+                  cursor: taskData.completed ? 'not-allowed' : 'pointer'
+                }}
+              >
+                +
+              </button>
+            </div>
+
+            {subtasks.length > 0 && (
+              <div className="subtasks-list">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>STT</th>
+                      <th>Hoàn thành</th>
+                      <th>Nhiệm vụ</th>
+                      <th>Hạn</th>
+                      <th>Người tạo</th>
+                      <th>Giao cho</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subtasks.map((subtask, index) => (
+                      <tr key={subtask.id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <Checkbox
+                            checked={subtask.completed}
+                            onChange={(e) => {
+                              const newSubtasks = [...subtasks];
+                              newSubtasks[index].completed = e.target.checked;
+                              setSubtasks(newSubtasks);
+                            }}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={subtask.title}
+                            onChange={(e) => {
+                              const newSubtasks = [...subtasks];
+                              newSubtasks[index].title = e.target.value;
+                              setSubtasks(newSubtasks);
+                            }}
+                            placeholder="Nhập nhiệm vụ phụ"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="date"
+                            value={subtask.due_date}
+                            onChange={(e) => {
+                              const newSubtasks = [...subtasks];
+                              newSubtasks[index].due_date = e.target.value;
+                              setSubtasks(newSubtasks);
+                            }}
+                          />
+                        </td>
+                        <td>{user?.username || ''}</td>
+                        <td>
+                          <select
+                            value={subtask.assigned_to || ''}
+                            onChange={(e) => {
+                              const newSubtasks = [...subtasks];
+                              newSubtasks[index].assigned_to = e.target.value ? Number(e.target.value) : null;
+                              setSubtasks(newSubtasks);
+                            }}
+                          >
+                            <option value="">-- Chọn người thực hiện --</option>
+                            {users?.filter(u => u.role === 'user').map(user => (
+                              <option key={user.id} value={user.id}>
+                                {user.username}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <button 
+                            type="button"
+                            className="remove-button"
+                            onClick={() => setSubtasks(subtasks.filter((_, i) => i !== index))}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
-        
+
         <div className="modal-footer">
-          <button className="btn-cancel" onClick={handleClose}>Hủy</button>
-          <button className="btn-submit" onClick={handleSubmitWithComplete}>Thêm nhiệm vụ</button>
+          <button onClick={handleClose} className="btn-cancel">
+            Hủy
+          </button>
+          <button 
+            onClick={() => handleSubmit({...taskData, subtasks})} 
+            className="btn-submit"
+          >
+            Thêm
+          </button>
         </div>
       </div>
     </div>
