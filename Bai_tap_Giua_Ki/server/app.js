@@ -9,6 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/todos', require('./src/routes/todoRoutes'));
+app.use('/api/users', require('./src/routes/userRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

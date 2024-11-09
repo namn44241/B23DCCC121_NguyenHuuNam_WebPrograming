@@ -4,6 +4,7 @@ import TaskList from './TaskList';
 import AddTask from './AddTask';
 import TaskModal from './components/TaskModal';
 import EditTaskModal from './components/EditTaskModal';
+import Login from './components/Login';
 import { todoService } from './services/todoService';
 import { getColorByDueDate } from './Task';
 
@@ -39,6 +40,11 @@ function convertDateToDayOfWeek(dateString) {
 }
 
 function App() {
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
   // State cho danh sách tasks và form input
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
@@ -61,6 +67,17 @@ function App() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
+  // Sửa hàm setUser để lưu vào localStorage
+  const handleLogin = (userData) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  // Sửa hàm logout để xóa khỏi localStorage
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+  };
 
   // Fetch tasks từ API khi component mount
   useEffect(() => {
@@ -79,9 +96,15 @@ function App() {
         console.error('Error fetching tasks:', error);
       }
     };
-  
-    getTasks();
-  }, []);
+
+    if (user) {
+      getTasks();
+    }
+  }, [user]); 
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   // Thêm hàm xử lý sort theo ngày
   const handleSortByDate = () => {
@@ -373,6 +396,11 @@ function App() {
       <h1>
         My work <span role="img" aria-label="target">🎯</span>
       </h1>
+
+      <div className="user-info">
+        <span>{user.username}</span>
+        <button className="logout-btn" onClick={handleLogout}>Đăng xuất</button>
+      </div>
       
       <div className="sort-buttons">
         <button 
