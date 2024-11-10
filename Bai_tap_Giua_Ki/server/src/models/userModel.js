@@ -1,18 +1,13 @@
 // src/models/userModel.js
 const db = require('../configs/database');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
 
 class UserModel {
   async create(userData) {
     try {
-      // Hash password trước khi lưu
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(userData.password, salt);
-
+      // Sử dụng SHA2 trực tiếp trong query MySQL
       const [result] = await db.query(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-        [userData.username, hashedPassword, userData.role || 'user']
+        'INSERT INTO users (username, password, role) VALUES (?, SHA2(?, 256), ?)',
+        [userData.username, userData.password, userData.role || 'user']
       );
 
       // Trả về user mới (không bao gồm password)
@@ -23,7 +18,10 @@ class UserModel {
 
       return newUser[0];
     } catch (error) {
-      throw new Error('Error creating user: ' + error.message);
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new Error('Username đã tồn tại');
+      }
+      throw new Error('Lỗi tạo user: ' + error.message);
     }
   }
 
@@ -34,36 +32,33 @@ class UserModel {
       );
       return users;
     } catch (error) {
-      throw new Error('Error getting users: ' + error.message);
+      throw new Error('Lỗi lấy danh sách users: ' + error.message);
     }
   }
 
   async verifyPassword(username, password) {
     try {
+      // So sánh password đã hash bằng SHA2 trực tiếp trong query
       const [users] = await db.query(
-        'SELECT * FROM users WHERE username = ?',
-        [username]
+        'SELECT id, username, role, created_at FROM users WHERE username = ? AND password = SHA2(?, 256)',
+        [username, password]
       );
   
-      if (!users.length) return null;
-  
-      const user = users[0];
-      
-      // Hash password người dùng nhập vào
-      const hashedPassword = crypto
-        .createHash('sha256')
-        .update(password)
-        .digest('hex');
-      
-      // So sánh với password đã hash trong database
-      if (user.password === hashedPassword) {
-        const { password: _, ...userWithoutPassword } = user;
-        return userWithoutPassword;
-      }
-      
-      return null;
+      return users[0] || null;
     } catch (error) {
-      throw new Error('Error verifying password: ' + error.message);
+      throw new Error('Lỗi xác thực password: ' + error.message);
+    }
+  }
+
+  async findByUsername(username) {
+    try {
+      const [users] = await db.query(
+        'SELECT id, username, role, created_at FROM users WHERE username = ?',
+        [username]
+      );
+      return users[0] || null;
+    } catch (error) {
+      throw new Error('Lỗi tìm user: ' + error.message);
     }
   }
 }

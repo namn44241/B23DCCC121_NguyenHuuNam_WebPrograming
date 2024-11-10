@@ -8,6 +8,7 @@ import Login from './components/Login';
 import { todoService } from './services/todoService';
 import { getColorByDueDate } from './Task';
 import { userService } from './services/userService';
+import Register from './components/Register'; // Import Register component
 
 
 
@@ -45,6 +46,8 @@ function App() {
     const savedUser = localStorage.getItem('user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // State cho danh sách tasks và form input
   const [tasks, setTasks] = useState([]);
@@ -90,15 +93,32 @@ function App() {
     const getTasks = async () => {
       try {
         const data = await todoService.getAllTodos();
-        console.log('Received tasks:', data); // Thêm log để debug
+        console.log('Raw tasks data:', data);
+    
         if (Array.isArray(data)) {
           const formattedTasks = data
-            // Lọc tasks theo quyền ở client
             .filter(task => {
-              if (!user) return false;
+              console.log('Checking task:', task); // Log task đang check
+              console.log('Current user:', user); // Log user hiện tại
+              
               if (user.role === 'admin') return true;
-              if (user.role === 'manager') return true;
-              return task.assigned_to === user.id;
+              
+              // Check từng điều kiện và log kết quả
+              const isCreator = task.created_by === user.id;
+              const isAssigned = task.assigned_to === user.id;
+              const hasAssignedSubtask = task.subtasks?.some(st => {
+                console.log('Checking subtask:', st); // Log subtask
+                return st.assigned_to === user.id;
+              });
+    
+              console.log('Is creator:', isCreator);
+              console.log('Is assigned:', isAssigned);
+              console.log('Has assigned subtask:', hasAssignedSubtask);
+    
+              const shouldShow = isCreator || isAssigned || hasAssignedSubtask;
+              console.log('Should show task:', shouldShow);
+    
+              return shouldShow;
             })
             .map(task => ({
               id: task.id,
@@ -106,13 +126,13 @@ function App() {
               description: task.description,
               date: convertDateToDayOfWeek(formatDate(task.due_date)),
               completed: Boolean(task.completed),
-              assigned_to: task.assigned_to
+              created_by: task.created_by,
+              assigned_to: task.assigned_to,
+              subtasks: task.subtasks
             }));
+    
+          console.log('Final filtered tasks:', formattedTasks);
           setTasks(formattedTasks);
-          console.log('Fetched tasks:', data);
-        } else {
-          console.error('Invalid data format:', data);
-          setTasks([]);
         }
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -449,7 +469,21 @@ function App() {
   };
 
   if (!user) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      isRegistering ? (
+        <Register 
+          onRegisterSuccess={() => {
+            setIsRegistering(false);
+            alert('Đăng ký thành công! Vui lòng đăng nhập.');
+          }} 
+        />
+      ) : (
+        <Login 
+          onLogin={handleLogin} 
+          onSwitchToRegister={() => setIsRegistering(true)}
+        />
+      )
+    );
   }
 
   // Trong phần return của App.js

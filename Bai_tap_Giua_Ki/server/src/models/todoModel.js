@@ -3,8 +3,8 @@ const db = require('../configs/database');
 class TodoModel {
   async getAll() {
     try {
-      // Sửa câu query để lấy thêm thông tin người tạo
-      const [rows] = await db.query(`
+      // Lấy tất cả tasks
+      const [tasks] = await db.query(`
         SELECT 
           t.*,
           u.username as created_by_name
@@ -12,8 +12,24 @@ class TodoModel {
         LEFT JOIN users u ON t.created_by = u.id
         ORDER BY t.id DESC
       `);
-      console.log('Todos with creator:', rows); // Thêm log để debug
-      return rows;
+  
+      // Lấy tất cả subtasks
+      const [allSubtasks] = await db.query(`
+        SELECT 
+          s.*,
+          u.username as created_by_name
+        FROM subtasks s
+        LEFT JOIN users u ON s.created_by = u.id
+      `);
+  
+      // Map subtasks vào tasks tương ứng
+      const tasksWithSubtasks = tasks.map(task => ({
+        ...task,
+        subtasks: allSubtasks.filter(subtask => subtask.todo_id === task.id)
+      }));
+  
+      console.log('Tasks with subtasks:', tasksWithSubtasks); // Debug log
+      return tasksWithSubtasks;
     } catch (error) {
       throw new Error('Error getting todos: ' + error.message);
     }
@@ -78,7 +94,7 @@ class TodoModel {
           subtask.title,
           subtask.due_date,
           subtask.completed ? 1 : 0,
-          created_by, // Sử dụng created_by từ task chính
+          subtask.created_by, // Sử dụng created_by từ task chính
           subtask.assigned_to || null
         ]);
   

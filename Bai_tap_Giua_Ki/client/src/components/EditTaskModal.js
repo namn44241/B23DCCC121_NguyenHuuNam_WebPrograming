@@ -69,27 +69,26 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
 
           {/* Thêm trường giao việc cho người khác */}
           {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
-            <div className="form-field">
-              <label>Giao cho</label>
-              <select
-                value={taskData.assigned_to || ''}
-                onChange={(e) => setTaskData({
-                  ...taskData,
-                  assigned_to: e.target.value ? Number(e.target.value) : null
-                })}
-              >
-                <option value="">-- Chọn người thực hiện --</option>
-                {users
-                  ?.filter(u => u.role === 'user')
-                  .map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.username}
-                    </option>
-                  ))
-                }
-              </select>
-            </div>
-          )}
+          <div className="form-field">
+            <label>Giao cho</label>
+            <select
+              value={taskData.assigned_to || ''}
+              onChange={(e) => setTaskData({
+                ...taskData,
+                assigned_to: e.target.value ? Number(e.target.value) : null
+              })}
+            >
+              <option value="">-- Chọn người thực hiện --</option>
+              {users
+                ?.filter(u => u.id !== currentUser.id) // Loại bỏ người đang đăng nhập
+                .map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.username} ({u.role})
+                  </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="form-field">
           <label>
@@ -185,30 +184,29 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
                           />
                         </td>
                         <td>
-                          {currentUser.username}
+                          {subtask.created_by_name || currentUser.username} {/* Lấy tên người tạo từ data trả về */}
                         </td>
                         <td>
-                          {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
-                            <select
-                              value={subtask.assigned_to || ''}
-                              onChange={(e) => {
-                                const newSubtasks = [...subtasks];
-                                newSubtasks[index].assigned_to = e.target.value ? Number(e.target.value) : null;
-                                setSubtasks(newSubtasks);
-                              }}
-                            >
-                              <option value="">-- Chọn người thực hiện --</option>
-                              {users
-                                ?.filter(u => u.role === 'user')
-                                .map(user => (
-                                  <option key={user.id} value={user.id}>
-                                    {user.username}
-                                  </option>
-                                ))
-                              }
-                            </select>
-                          )}
-                        </td>
+                        {(currentUser?.role === 'admin' || currentUser?.role === 'manager') && (
+                          <select
+                            value={subtask.assigned_to || ''}
+                            onChange={(e) => {
+                              const newSubtasks = [...subtasks];
+                              newSubtasks[index].assigned_to = e.target.value ? Number(e.target.value) : null;
+                              setSubtasks(newSubtasks);
+                            }}
+                          >
+                            <option value="">-- Chọn người thực hiện --</option>
+                            {users
+                              ?.filter(u => u.id !== currentUser.id) // Loại bỏ người đang đăng nhập
+                              .map(u => (
+                                <option key={u.id} value={u.id}>
+                                  {u.username} ({u.role})
+                                </option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
                         <td>
                           <button 
                             type="button"

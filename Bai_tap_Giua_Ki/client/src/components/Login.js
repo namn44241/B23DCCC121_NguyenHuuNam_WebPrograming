@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { userService } from '../services/userService';
 
-function Login({ onLogin }) {
+function Login({ onLogin, onSwitchToRegister }) { // Thêm prop onSwitchToRegister
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,9 +23,9 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-container">
-      <form onSubmit={handleSubmit}>
-        <h2>Đăng nhập</h2>
-        {error && <div className="error">{error}</div>}
+      <form className="login-form" onSubmit={handleSubmit}>
+        <h2 className="login-title">Đăng nhập</h2>
+        {error && <div className="error-message">{error}</div>}
         
         <div className="form-group">
           <input
@@ -45,7 +45,11 @@ function Login({ onLogin }) {
           />
         </div>
 
-        <button type="submit">Đăng nhập</button>
+        <button type="submit" className="login-button">Đăng nhập</button>
+
+        <div className="register-link">
+          Chưa có tài khoản? <button onClick={onSwitchToRegister} className="register-button">Đăng ký</button>
+        </div>
       </form>
     </div>
   );

@@ -2,7 +2,7 @@
 const UserModel = require('../models/userModel');
 
 class UserController {
-  // Đăng ký user mới
+  // Lấy tất cả users
   async getAllUsers(req, res) {
     try {
       const users = await UserModel.getAll();
@@ -19,19 +19,38 @@ class UserController {
     }
   }
   
+  // Đăng ký user mới
   async register(req, res) {
     try {
-      const { username, password } = req.body;
+      const { username, password, role = 'user' } = req.body;
       
       // Validate
       if (!username || !password) {
         return res.status(400).json({
           status: 'error',
-          message: 'Username and password are required'
+          message: 'Username và password là bắt buộc'
         });
       }
 
-      const newUser = await UserModel.create({ username, password });
+      // Kiểm tra username đã tồn tại
+      const existingUser = await UserModel.findByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Username đã tồn tại'
+        });
+      }
+
+      // Tạo user mới với password đã hash bằng SHA2
+      const newUser = await UserModel.create({ 
+        username, 
+        password,  // Password sẽ được hash trong Model
+        role 
+      });
+
+      // Loại bỏ password trước khi trả về
+      delete newUser.password;
+
       res.status(201).json({
         status: 'success',
         data: newUser
@@ -54,7 +73,7 @@ class UserController {
       if (!username || !password) {
         return res.status(400).json({
           status: 'error',
-          message: 'Username and password are required'
+          message: 'Username và password là bắt buộc'
         });
       }
 
@@ -63,9 +82,12 @@ class UserController {
       if (!user) {
         return res.status(401).json({
           status: 'error',
-          message: 'Invalid username or password'
+          message: 'Username hoặc password không đúng'
         });
       }
+
+      // Loại bỏ password trước khi trả về
+      delete user.password;
 
       res.json({
         status: 'success',

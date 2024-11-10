@@ -60,10 +60,12 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, use
                 })}
               >
                 <option value="">-- Chọn người thực hiện --</option>
-                {users?.filter(u => u.role === 'user').map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.username}
-                  </option>
+                {users
+                  ?.filter(u => u.id !== user.id) // Loại bỏ người đang đăng nhập
+                  .map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.username} ({u.role})
+                    </option>
                 ))}
               </select>
             </div>
@@ -155,23 +157,31 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, use
                             }}
                           />
                         </td>
-                        <td>{user?.username || ''}</td>
                         <td>
-                          <select
-                            value={subtask.assigned_to || ''}
-                            onChange={(e) => {
-                              const newSubtasks = [...subtasks];
-                              newSubtasks[index].assigned_to = e.target.value ? Number(e.target.value) : null;
-                              setSubtasks(newSubtasks);
-                            }}
-                          >
-                            <option value="">-- Chọn người thực hiện --</option>
-                            {users?.filter(u => u.role === 'user').map(user => (
-                              <option key={user.id} value={user.id}>
-                                {user.username}
-                              </option>
-                            ))}
-                          </select>
+                          {subtask.created_by_name || user.username} 
+                        </td>
+                        <td>
+                          {(user?.role === 'admin' || user?.role === 'manager') ? (
+                            <select
+                              value={subtask.assigned_to || ''}
+                              onChange={(e) => {
+                                const newSubtasks = [...subtasks];
+                                newSubtasks[index].assigned_to = e.target.value ? Number(e.target.value) : null;
+                                setSubtasks(newSubtasks);
+                              }}
+                            >
+                              <option value="">-- Chọn người thực hiện --</option>
+                              {users
+                                ?.filter(u => u.id !== user.id) // Chỉ thêm filter này
+                                .map(u => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.username} ({u.role})
+                                  </option>
+                                ))}
+                            </select>
+                          ) : (
+                            <span>Không có quyền giao việc</span>
+                          )}
                         </td>
                         <td>
                           <button 
