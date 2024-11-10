@@ -43,7 +43,7 @@ class TodoController {
 
   async createTodo(req, res) {
     try {
-      const { title, description, due_date, completed, subtasks } = req.body;
+      const { title, description, due_date, completed, created_by, assigned_to, subtasks } = req.body;
       
       // Validation
       if (!title || !due_date) {
@@ -52,22 +52,28 @@ class TodoController {
           message: 'Title and due date are required'
         });
       }
-
+  
       // Format date
       const formattedDate = new Date(due_date).toISOString().split('T')[0];
   
+      // Tạo object todoData với đầy đủ thông tin
       const todoData = {
         title,
         description: description || '',
         due_date: formattedDate,
         completed: completed ? 1 : 0,
+        created_by: created_by || null,  // Thêm created_by
+        assigned_to: assigned_to || null, // Thêm assigned_to
         subtasks: subtasks?.map(subtask => ({
           ...subtask,
           due_date: new Date(subtask.due_date).toISOString().split('T')[0],
-          completed: subtask.completed ? 1 : 0
+          completed: subtask.completed ? 1 : 0,
+          created_by: created_by || null  // Thêm created_by cho subtasks
         }))
       };
-
+  
+      console.log('Creating todo with data:', todoData); // Log để debug
+  
       const newTodo = await TodoModel.create(todoData);
   
       res.status(201).json({
@@ -86,21 +92,26 @@ class TodoController {
   async updateTodo(req, res) {
     try {
       const { id } = req.params;
-      const { title, description, due_date, completed, subtasks } = req.body;
+      const { title, description, due_date, completed, created_by, assigned_to, subtasks } = req.body;
   
-      const formattedDate = due_date ? due_date.split('T')[0] : null;
+      const formattedDate = due_date ? new Date(due_date).toISOString().split('T')[0] : null;
   
       const todoData = {
         title,
         description: description || '',
         due_date: formattedDate,
         completed: completed !== undefined ? completed : 0,
+        created_by: created_by || null,  // Thêm created_by
+        assigned_to: assigned_to || null, // Thêm assigned_to
         subtasks: subtasks?.map(subtask => ({
           ...subtask,
           due_date: new Date(subtask.due_date).toISOString().split('T')[0],
-          completed: subtask.completed ? 1 : 0
+          completed: subtask.completed ? 1 : 0,
+          created_by: created_by || null
         }))
       };
+  
+      console.log('Updating todo with data:', todoData);
   
       const updatedTodo = await TodoModel.update(id, todoData);
       

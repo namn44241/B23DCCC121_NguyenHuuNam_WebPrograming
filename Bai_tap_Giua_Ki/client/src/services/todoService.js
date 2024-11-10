@@ -31,13 +31,17 @@ export const todoService = {
 
   async createTodo(todoData) {
     try {
+      const currentUser = JSON.parse(localStorage.getItem('user'));
+      
       const dataToSend = {
         ...todoData,
-        completed: todoData.completed ? 1 : 0
+        completed: todoData.completed ? 1 : 0,
+        created_by: currentUser?.id || null,
+        assigned_to: todoData.assigned_to || null
       };
-
+  
       console.log('Sending to server:', dataToSend);
-
+  
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -45,12 +49,12 @@ export const todoService = {
         },
         body: JSON.stringify(dataToSend)
       });
-
+  
       const data = await response.json();
       console.log('Server response:', data);
-
+  
       if (data.status === 'success') {
-        return data.data; // Trả về chỉ phần data
+        return data.data;
       }
       throw new Error(data.message || 'Failed to create todo');
     } catch (error) {
@@ -61,21 +65,29 @@ export const todoService = {
 
   async updateTodo(id, todoData) {
     try {
-      console.log('TodoService - Sending update:', todoData);
+      const currentUser = JSON.parse(localStorage.getItem('user'));
       
+      const dataToSend = {
+        ...todoData,
+        created_by: currentUser?.id || null,
+        assigned_to: todoData.assigned_to || null
+      };
+  
+      console.log('TodoService - Sending update:', dataToSend);
+  
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(todoData)
+        body: JSON.stringify(dataToSend)
       });
-
+  
       const data = await response.json();
       console.log('TodoService - Response:', data);
-
+  
       if (data.status === 'success') {
-        return data.data; // Trả về chỉ phần data
+        return data.data;
       }
       throw new Error(data.message || 'Failed to update todo');
     } catch (error) {

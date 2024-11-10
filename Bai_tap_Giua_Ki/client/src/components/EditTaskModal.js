@@ -15,6 +15,22 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
     };
   }, [open]);
 
+  useEffect(() => {
+    if (open && taskData.subtasks) {
+      const formattedSubtasks = taskData.subtasks.map(st => {
+        // Format ngày từ ISO string sang YYYY-MM-DD
+        const date = st.due_date ? new Date(st.due_date) : null;
+        return {
+          ...st,
+          due_date: date ? date.toISOString().split('T')[0] : ''
+        };
+      });
+      setSubtasks(formattedSubtasks);
+    } else {
+      setSubtasks([]);
+    }
+  }, [open, taskData.subtasks]);
+
   if (!open) return null;
   
   return (
@@ -219,7 +235,20 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
             Xóa
           </button>
           <button 
-            onClick={() => handleSubmit({...taskData, subtasks})} 
+            onClick={() => {
+              const formData = {
+                ...taskData,
+                assigned_to: taskData.assigned_to || null,  // Đảm bảo gửi assigned_to
+                subtasks: subtasks.map(st => ({
+                  ...st,
+                  completed: st.completed ? 1 : 0,
+                  created_by: currentUser.id,
+                  assigned_to: st.assigned_to || null
+                }))
+              };
+              console.log('Submitting updated form data:', formData);
+              handleSubmit(formData);
+            }} 
             className="btn-submit"
           >
             Lưu thay đổi

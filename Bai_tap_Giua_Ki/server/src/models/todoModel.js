@@ -3,7 +3,16 @@ const db = require('../configs/database');
 class TodoModel {
   async getAll() {
     try {
-      const [rows] = await db.query('SELECT * FROM todos ORDER BY id DESC');
+      // Sửa câu query để lấy thêm thông tin người tạo
+      const [rows] = await db.query(`
+        SELECT 
+          t.*,
+          u.username as created_by_name
+        FROM todos t
+        LEFT JOIN users u ON t.created_by = u.id
+        ORDER BY t.id DESC
+      `);
+      console.log('Todos with creator:', rows); // Thêm log để debug
       return rows;
     } catch (error) {
       throw new Error('Error getting todos: ' + error.message);
@@ -12,13 +21,29 @@ class TodoModel {
 
   async getById(id) {
     try {
-      // Lấy task chính
-      const [todos] = await db.query('SELECT * FROM todos WHERE id = ?', [id]);
+
+      // Lấy task chính với thông tin người tạo
+      const [todos] = await db.query(`
+        SELECT 
+          t.*,
+          u.username as created_by_name
+        FROM todos t
+        LEFT JOIN users u ON t.created_by = u.id
+        WHERE t.id = ?
+      `, [id]);
+      
       if (todos.length === 0) return null;
 
-      // Lấy subtasks
-      const [subtasks] = await db.query('SELECT * FROM subtasks WHERE todo_id = ?', [id]);
-      
+      // Lấy subtasks với thông tin người tạo
+      const [subtasks] = await db.query(`
+        SELECT 
+          s.*,
+          u.username as created_by_name
+        FROM subtasks s
+        LEFT JOIN users u ON s.created_by = u.id
+        WHERE s.todo_id = ?
+      `, [id]);
+        
       return {
         ...todos[0],
         subtasks
@@ -33,17 +58,19 @@ class TodoModel {
     
     try {
       await conn.beginTransaction();
-
-      const { title, description, due_date, completed, subtasks } = todoData;
+  
+      const { title, description, due_date, completed, created_by, assigned_to, subtasks } = todoData;
       
+      console.log('Creating todo with data:', todoData); // Debug log
+  
       // Tạo task chính
       const [result] = await conn.query(
-        'INSERT INTO todos (title, description, due_date, completed) VALUES (?, ?, ?, ?)',
-        [title, description, due_date, completed]
+        'INSERT INTO todos (title, description, due_date, completed, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?)',
+        [title, description, due_date, completed, created_by, assigned_to]
       );
-
+  
       const todoId = result.insertId;
-
+  
       // Thêm subtasks nếu có
       if (subtasks && subtasks.length > 0) {
         const subtaskValues = subtasks.map(subtask => [
@@ -51,25 +78,25 @@ class TodoModel {
           subtask.title,
           subtask.due_date,
           subtask.completed ? 1 : 0,
-          subtask.created_by || todoData.created_by, // Thêm created_by
-          subtask.assigned_to
+          created_by, // Sử dụng created_by từ task chính
+          subtask.assigned_to || null
         ]);
-
+  
         await conn.query(
           'INSERT INTO subtasks (todo_id, title, due_date, completed, created_by, assigned_to) VALUES ?',
           [subtaskValues]
         );
       }
-
+  
       await conn.commit();
       conn.release();
-
-      // Lấy todo vừa tạo kèm subtasks
+  
       return this.getById(todoId);
-
+  
     } catch (error) {
       await conn.rollback();
       conn.release();
+      console.error('Model - Error creating todo:', error); // Debug log
       throw new Error('Error creating todo: ' + error.message);
     }
   }

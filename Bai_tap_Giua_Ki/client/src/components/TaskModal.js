@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { Checkbox } from '@mui/material';
 
 function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, user, users }) {
   const [subtasks, setSubtasks] = useState([]);
+
+  useEffect(() => {
+    if (open && taskData.subtasks) {
+      setSubtasks(taskData.subtasks);
+    } else {
+      setSubtasks([]);
+    }
+  }, [open, taskData.subtasks]);
 
   if (!open) return null;
 
@@ -41,7 +49,7 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, use
           </div>
 
           {/* Thêm select box cho assigned_to nếu user là admin */}
-          {user.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'manager') && (
             <div className="form-field">
               <label>Giao cho</label>
               <select
@@ -188,7 +196,20 @@ function TaskModal({ open, handleClose, taskData, setTaskData, handleSubmit, use
             Hủy
           </button>
           <button 
-            onClick={() => handleSubmit({...taskData, subtasks})} 
+            onClick={() => {
+              const formData = {
+                ...taskData,
+                assigned_to: taskData.assigned_to || null,  // Đảm bảo gửi assigned_to
+                subtasks: subtasks.map(st => ({
+                  ...st,
+                  completed: st.completed ? 1 : 0,
+                  created_by: user.id,
+                  assigned_to: st.assigned_to || null
+                }))
+              };
+              console.log('Submitting form data:', formData);
+              handleSubmit(formData);
+            }} 
             className="btn-submit"
           >
             Thêm

@@ -64,7 +64,8 @@ function App() {
     title: '',
     description: '',
     due_date: '',
-    completed: false
+    completed: false,
+    assigned_to: null  // Thêm assigned_to
   });
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -89,6 +90,7 @@ function App() {
     const getTasks = async () => {
       try {
         const data = await todoService.getAllTodos();
+        console.log('Received tasks:', data); // Thêm log để debug
         if (Array.isArray(data)) {
           const formattedTasks = data
             // Lọc tasks theo quyền ở client
@@ -233,7 +235,9 @@ function App() {
         title: newTask,
         description: '',
         due_date: newDate,
-        completed: false
+        completed: false,
+        assigned_to: null,  // Thêm assigned_to
+        subtasks: [] 
       });
       setModalOpen(true);
     } else {
@@ -242,27 +246,41 @@ function App() {
   };
 
   // Xử lý khi submit form trong modal
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData) => { 
     try {
-      console.log('Sending task data:', taskData);
+      console.log('Sending task data:', formData);
   
       const taskToCreate = {
-        title: taskData.title,
-        description: taskData.description || '',
-        due_date: taskData.due_date,
-        completed: taskData.completed ? 1 : 0
+        title: formData.title,
+        description: formData.description || '',
+        due_date: formData.due_date,
+        completed: formData.completed ? 1 : 0,
+        created_by: user.id,
+        assigned_to: formData.assigned_to || null,
+        subtasks: formData.subtasks?.map(subtask => ({
+          title: subtask.title,
+          description: subtask.description || '',
+          due_date: subtask.due_date,
+          completed: subtask.completed ? 1 : 0,
+          created_by: user.id,
+          assigned_to: subtask.assigned_to || null
+        }))
       };
   
-      const response = await todoService.createTodo(taskToCreate);
-      console.log('Server response:', response); // response là data trực tiếp, không cần .data nữa
+      console.log('Task to create:', taskToCreate);
   
-      // Tạo task mới với trạng thái completed đúng
+      const response = await todoService.createTodo(taskToCreate);
+      console.log('Server response:', response);
+  
       const newTask = {
-        id: response.id, // Bỏ .data
-        name: response.title, // Bỏ .data
-        description: response.description, // Bỏ .data
-        date: convertDateToDayOfWeek(formatDate(response.due_date)), // Bỏ .data
-        completed: Boolean(response.completed) // Bỏ .data
+        id: response.id,
+        name: response.title,
+        description: response.description,
+        date: convertDateToDayOfWeek(formatDate(response.due_date)),
+        completed: Boolean(response.completed),
+        assigned_to: response.assigned_to,  // Thêm assigned_to
+        created_by: response.created_by,
+        created_by_name: response.created_by_name
       };
       
       setTasks([...tasks, newTask]);
@@ -273,7 +291,8 @@ function App() {
         title: '',
         description: '',
         due_date: '',
-        completed: false
+        completed: false,
+        assigned_to: null  // Reset assigned_to
       });
     } catch (error) {
       console.error('Error creating task:', error);
@@ -294,12 +313,14 @@ function App() {
         date.setDate(date.getDate() + 1);
         const isoDate = date.toISOString().split('T')[0];
         
-        // Gửi tất cả thông tin của task, chỉ đổi completed
+        // Gửi tất cả thông tin của task, thêm created_by
         const updatedTaskData = {
           title: taskDetail.title,
           description: taskDetail.description,
-          due_date: isoDate, // Sử dụng ngày đã được xử lý
-          completed: task.completed ? 0 : 1
+          due_date: isoDate,
+          completed: task.completed ? 0 : 1,
+          created_by: user.id,  // Thêm created_by
+          assigned_to: taskDetail.assigned_to
         };
   
         console.log('Sending toggle data:', updatedTaskData);
@@ -342,7 +363,9 @@ function App() {
         title: taskDetail.title,
         description: taskDetail.description || '',
         due_date: formattedDate,
-        completed: Boolean(taskDetail.completed)
+        completed: Boolean(taskDetail.completed),
+        assigned_to: taskDetail.assigned_to,  // Thêm assigned_to
+        subtasks: taskDetail.subtasks || [] 
       });
       setEditModalOpen(true);
     } catch (error) {
@@ -363,38 +386,36 @@ function App() {
   };
 
   // Thêm hàm xử lý update task
-  const handleUpdateTask = async () => {
+  const handleUpdateTask = async (formData) => {
     try {
-      // Log để kiểm tra dữ liệu đầu vào
-      console.log('Current taskData:', taskData);
-      console.log('Current editingTask:', editingTask);
-  
-      // Xử lý ngày tháng
-      const date = new Date(taskData.due_date);
+      console.log('Current formData:', formData);
+
+      const date = new Date(formData.due_date);
       const isoDate = date.toISOString().split('T')[0];
-      
-      console.log('Original due_date:', taskData.due_date);
-      console.log('Processed date:', isoDate);
   
       const updatedTaskData = {
-        title: taskData.title,
-        description: taskData.description || '',
+        title: formData.title,
+        description: formData.description || '',
         due_date: isoDate,
-        completed: taskData.completed ? 1 : 0
+        completed: formData.completed ? 1 : 0,
+        created_by: user.id,
+        assigned_to: formData.assigned_to || null,
+        subtasks: formData.subtasks?.map(subtask => ({
+          title: subtask.title,
+          description: subtask.description || '',
+          due_date: subtask.due_date,
+          completed: subtask.completed ? 1 : 0,
+          created_by: user.id,
+          assigned_to: subtask.assigned_to || null
+        }))
       };
   
       console.log('Sending to server:', updatedTaskData);
   
-      // Gọi API update
       const response = await todoService.updateTodo(editingTask.id, updatedTaskData);
       
       console.log('Server response:', response);
   
-      if (!response || !response.due_date) {
-        throw new Error('Invalid server response');
-      }
-  
-      // Cập nhật UI
       setTasks(prevTasks => 
         prevTasks.map(t => 
           t.id === editingTask.id 
@@ -403,7 +424,10 @@ function App() {
                 name: response.title,
                 description: response.description,
                 date: convertDateToDayOfWeek(formatDate(response.due_date)),
-                completed: Boolean(response.completed)
+                completed: Boolean(response.completed),
+                assigned_to: response.assigned_to,  // Thêm assigned_to
+                created_by: response.created_by,
+                created_by_name: response.created_by_name
               }
             : t
         )
@@ -415,7 +439,8 @@ function App() {
         title: '',
         description: '',
         due_date: '',
-        completed: false
+        completed: false,
+        assigned_to: null  // Reset assigned_to
       });
     } catch (error) {
       console.error('Error updating task:', error);
@@ -555,7 +580,9 @@ function App() {
             title: '',
             description: '',
             due_date: '',
-            completed: false
+            completed: false,
+            assigned_to: null,  // Reset assigned_to
+            subtasks: []
           });
         }}
         taskData={taskData}

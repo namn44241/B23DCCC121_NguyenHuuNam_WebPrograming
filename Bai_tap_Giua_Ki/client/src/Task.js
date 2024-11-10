@@ -77,6 +77,11 @@ function Task({ task, onToggleComplete, onEdit }) {
         <span className={`task-date ${dueColor}`}>
           📅 {task.date}
         </span>
+        {task.created_by && (
+          <span className="task-creator">
+            👤 Created by: {task.created_by_name}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -441,3 +441,9 @@ select:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
+
+.task-creator {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 4px;
+}
