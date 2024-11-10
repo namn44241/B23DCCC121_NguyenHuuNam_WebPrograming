@@ -1,8 +1,8 @@
 # NOTEBOOK MÔN LẬP TRÌNH WEB - THẦY VŨ VĂN THƯƠNG PTIT
 
-## MSV: B23DCCC121
-## TÊN: NGUYỄN HỮU NAM
-## LỚP: D23CQCC01-B
+**MSV:** B23DCCC121  
+**TÊN:** NGUYỄN HỮU NAM  
+**LỚP:** D23CQCC01-B
 
 ## Hướng dẫn chi tiết Bai_tap_Giua_Ki
 
