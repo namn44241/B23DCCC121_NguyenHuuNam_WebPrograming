@@ -23,7 +23,12 @@
 
 4. Trong phpMyAdmin, chọn cơ sở dữ liệu và chèn dữ liệu từ các tệp trong thư mục `CDSL MYSQL`.
 
-5. Mở trình duyệt và truy cập [localhost:3000](http://localhost:3000):
+5. Trong terminal, di chuyển vào thư mục `server` và chạy lệnh: 
+    ```bash
+    npm run dev
+    ```
+
+6. Mở trình duyệt và truy cập [localhost:3000](http://localhost:3000):
     - Đăng nhập bằng tài khoản: `admin`
     - Mật khẩu: `1`
 
