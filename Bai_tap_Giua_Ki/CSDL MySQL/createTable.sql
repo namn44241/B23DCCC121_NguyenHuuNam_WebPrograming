@@ -20,6 +20,10 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE users 
+ADD COLUMN email VARCHAR(255),
+ADD COLUMN email_notifications BOOLEAN DEFAULT FALSE;
+
 -- 3. Tạo bảng subtasks 
 CREATE TABLE subtasks (
     id INT PRIMARY KEY AUTO_INCREMENT,

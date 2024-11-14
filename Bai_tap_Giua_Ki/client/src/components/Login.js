@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { userService } from '../services/userService';
 
-function Login({ onLogin, onSwitchToRegister }) { // Thêm prop onSwitchToRegister
+function Login({ onLogin, onSwitchToRegister, onGuestMode }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,6 +46,12 @@ function Login({ onLogin, onSwitchToRegister }) { // Thêm prop onSwitchToRegist
         </div>
 
         <button type="submit" className="login-button">Đăng nhập</button>
+
+        <div className="guest-mode">
+          <button onClick={onGuestMode} className="guest-login-btn">
+            Không cần tài khoản
+          </button>
+        </div>
 
         <div className="register-link">
           Chưa có tài khoản? <button onClick={onSwitchToRegister} className="register-button">Đăng ký</button>

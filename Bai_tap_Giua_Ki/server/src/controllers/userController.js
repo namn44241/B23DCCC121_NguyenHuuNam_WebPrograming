@@ -1,5 +1,6 @@
 // src/controllers/userController.js
 const UserModel = require('../models/userModel');
+const db = require('../configs/database');
 
 class UserController {
   // Lấy tất cả users
@@ -77,15 +78,20 @@ class UserController {
         });
       }
 
-      const user = await UserModel.verifyPassword(username, password);
-      
-      if (!user) {
+      const [users] = await db.query(`
+        SELECT id, username, role, email, email_notifications, created_at 
+        FROM users 
+        WHERE username = ? AND password = SHA2(?, 256)
+      `, [username, password]);
+
+      if (users.length === 0) {
         return res.status(401).json({
           status: 'error',
           message: 'Username hoặc password không đúng'
         });
       }
 
+      const user = users[0];
       // Loại bỏ password trước khi trả về
       delete user.password;
 

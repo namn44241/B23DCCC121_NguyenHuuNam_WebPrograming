@@ -17,14 +17,15 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
 
   useEffect(() => {
     if (open && taskData.subtasks) {
-      const formattedSubtasks = taskData.subtasks.map(st => {
-        // Format ngày từ ISO string sang YYYY-MM-DD
-        const date = st.due_date ? new Date(st.due_date) : null;
-        return {
-          ...st,
-          due_date: date ? date.toISOString().split('T')[0] : ''
-        };
-      });
+      const formattedSubtasks = taskData.subtasks.map(st => ({
+        id: st.id || Date.now(),
+        title: st.title || '',
+        due_date: st.due_date ? new Date(st.due_date).toISOString().split('T')[0] : '',
+        completed: Boolean(st.completed),
+        created_by: st.created_by || 'guest',
+        created_by_name: st.created_by_name || 'Khách',
+        assigned_to: st.assigned_to || null
+      }));
       setSubtasks(formattedSubtasks);
     } else {
       setSubtasks([]);
@@ -110,15 +111,16 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
                 onClick={() => setSubtasks([
                   ...subtasks,
                   {
-                    id: subtasks.length + 1,
+                    id: Date.now(), // Dùng timestamp thay vì length + 1
                     title: '',
                     due_date: '',
-                    created_by: currentUser.id,
+                    created_by: currentUser?.id || 'guest', // Thêm check null
+                    created_by_name: currentUser?.username || 'Khách',
                     assigned_to: null,
                     completed: false
                   }
                 ])}
-                disabled={taskData.completed} // Thêm điều kiện disable
+                disabled={taskData.completed}
                 style={{ 
                   opacity: taskData.completed ? 0.5 : 1,
                   cursor: taskData.completed ? 'not-allowed' : 'pointer'
@@ -236,11 +238,14 @@ function EditTaskModal({ open, handleClose, taskData, setTaskData, handleSubmit,
             onClick={() => {
               const formData = {
                 ...taskData,
-                assigned_to: taskData.assigned_to || null,  // Đảm bảo gửi assigned_to
+                assigned_to: taskData.assigned_to || null,
                 subtasks: subtasks.map(st => ({
-                  ...st,
+                  id: st.id || Date.now(),
+                  title: st.title || '',
+                  due_date: st.due_date || '',
                   completed: st.completed ? 1 : 0,
-                  created_by: currentUser.id,
+                  created_by: st.created_by || 'guest',
+                  created_by_name: st.created_by_name || 'Khách',
                   assigned_to: st.assigned_to || null
                 }))
               };
